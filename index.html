@@ -302,6 +302,30 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
 .aviso-armaz{background:var(--neg);color:#fff;padding:12px 16px;font-size:13px;line-height:1.45;text-align:center}
 .aviso-armaz b{color:#fff}
 
+/* ---------- resultado ---------- */
+.res-periodo{display:flex;gap:8px}
+#rs-kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+#aba-resultado .rolar{overflow-x:auto}
+#rs-meses{min-width:560px}
+.res-periodo .inp{min-width:120px}
+.desp-form{grid-template-columns:150px 170px minmax(160px,1fr) 150px 130px}
+.botoes-desp{display:flex;gap:10px;align-items:center;margin-top:12px}
+.desp{display:grid;grid-template-columns:100px 130px minmax(0,1fr) 120px 34px;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px dashed var(--bd);font-size:13px}
+.desp .cat{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--cara2);color:var(--mog);justify-self:start}
+.desp .val{text-align:right;font-weight:600}
+.desp small{color:var(--mut)}
+.pos{color:var(--ok)} .neg{color:var(--neg)}
+#rs-meses td,#rs-meses th{text-align:right} #rs-meses td:first-child,#rs-meses th:first-child{text-align:left}
+#rs-meses tr.atual td{background:var(--cara2)}
+@media (max-width:760px){
+  .desp-form{grid-template-columns:1fr 1fr} .desp-form .f:nth-child(3){grid-column:1 / -1}
+  #rs-kpis{grid-template-columns:1fr 1fr}
+  .desp{grid-template-columns:auto 1fr auto 30px;grid-template-areas:"data cat val rm" "desc desc desc rm";row-gap:4px}
+  .desp .data{grid-area:data} .desp .cat{grid-area:cat} .desp .val{grid-area:val;white-space:nowrap} .desp .desc{grid-area:desc} .desp button{grid-area:rm}
+  .res-periodo{width:100%} .res-periodo .inp{flex:1}
+  .card-tit{flex-wrap:wrap}
+}
+
 /* ---------- mensagem WhatsApp ---------- */
 .btn.zap{width:100%;justify-content:center;margin-top:8px;padding:10px;font-weight:600;color:#1f7a4a;border-color:#1f7a4a}
 .btn.zap:hover{background:#e8f5ee}
@@ -363,6 +387,7 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
     <nav class="abas">
       <button data-aba="desconto" class="ativo">Desconto</button>
       <button data-aba="operacoes">Operações aceitas<span class="cont" id="n-ops">0</span></button>
+      <button data-aba="resultado">Resultado</button>
       <button data-aba="sobre">Fórmulas</button>
     </nav>
   </div>
@@ -575,6 +600,35 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
   </div>
 </dialog>
 
+<!-- ================= RESULTADO (lucratividade) ================= -->
+<section id="aba-resultado" class="oculto">
+  <div class="card">
+    <div class="card-tit"><span class="passo">R$</span><h2>Resultado das operações</h2>
+      <div class="ac res-periodo">
+        <div class="inp"><select id="rs-ano"></select></div>
+        <div class="inp"><select id="rs-mes"><option value="">Ano inteiro</option></select></div>
+      </div>
+    </div>
+    <div class="ops-kpis" id="rs-kpis"></div>
+    <p class="mut" style="font-size:12px;margin:-4px 0 14px">Receita = juros + ad valorem + tarifas das operações aceitas, no mês da data de aceite. O IOF retido não é receita: é repassado ao governo.</p>
+    <div class="rolar"><table class="tabela" id="rs-meses"></table></div>
+  </div>
+
+  <div class="card">
+    <div class="card-tit"><span class="passo">−</span><h2>Despesas</h2></div>
+    <div class="campos desp-form">
+      <label class="f"><span>Data</span><div class="inp"><input type="date" id="dp-data"></div></label>
+      <label class="f"><span>Categoria</span><div class="inp"><select id="dp-cat"></select></div></label>
+      <label class="f"><span>Descrição</span><div class="inp"><input id="dp-desc" placeholder="Ex.: honorários de novembro"></div></label>
+      <label class="f"><span>Valor</span><div class="inp"><i>R$</i><input id="dp-valor" class="dir num" inputmode="decimal" placeholder="0,00"></div></label>
+      <label class="f"><span>Repetir</span><div class="inp"><input id="dp-rep" class="dir" inputmode="numeric" value="1"><i>meses</i></div><small>Ex.: 12 para o contador o ano todo</small></label>
+    </div>
+    <div class="botoes-desp"><button class="btn pri" id="dp-add">+ Adicionar despesa</button><span class="zap-ok" id="dp-ok"></span></div>
+    <div class="ops-kpis" id="dp-cats" style="margin-top:14px"></div>
+    <div id="dp-lista"></div>
+  </div>
+</section>
+
 <section id="aba-sobre" class="oculto">
   <div class="card formulas" style="max-width:820px">
     <div class="card-tit"><h2>Como os valores são calculados</h2></div>
@@ -594,6 +648,13 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
       <li>Vencimento anterior ao aceite (prazo negativo): calcula como no Excel, mas destaca o cheque e mostra um aviso.</li>
       <li>Os valores são calculados sem arredondamento, como no Excel, e exibidos com 2 casas.</li>
       <li>Padrões: juros de 4% ao mês e floating de 2 dias.</li>
+    </ul>
+    <h3>Resultado (lucratividade)</h3>
+    <ul>
+      <li><b>Receita</b> = <code>juros + ad valorem + tarifas</code> das operações aceitas, no mês da data de aceite</li>
+      <li><b>IOF retido</b>: mostrado à parte; não é receita, porque é repassado ao governo</li>
+      <li><b>Resultado</b> = <code>receita − despesas</code> (contador, taxas bancárias, tributos e outros, pela data da despesa)</li>
+      <li><b>Margem</b> = <code>resultado ÷ receita</code> · <b>Retorno sobre o capital</b> = <code>resultado ÷ líquido pago aos clientes</code></li>
     </ul>
     <p class="mut">Os dados ficam neste navegador e só saem dele quando você compartilha o arquivo com a equipe ou lê uma foto pela IA. Versão da calculadora: <b id="versao-calc"></b>.</p>
   </div>
@@ -678,9 +739,10 @@ function salvar(){ try{ localStorage.setItem(CHAVE, JSON.stringify(estado)); }ca
 /* ---- abas ---- */
 document.querySelectorAll('.abas button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.abas button').forEach(x=>x.classList.toggle('ativo', x===b));
-  ['desconto','operacoes','sobre'].forEach(a => $('#aba-'+a).classList.toggle('oculto', a!==b.dataset.aba));
+  ['desconto','operacoes','resultado','sobre'].forEach(a => $('#aba-'+a).classList.toggle('oculto', a!==b.dataset.aba));
   document.body.classList.toggle('aba-desconto', b.dataset.aba === 'desconto');
   if (b.dataset.aba === 'operacoes') renderOps();
+  if (b.dataset.aba === 'resultado') renderResultado();
 });
 
 /* formata valores em reais ao sair do campo */
@@ -1072,12 +1134,12 @@ function statusChave(){
 const chaveValida = k => typeof k === 'string' && /^sk-ant-[A-Za-z0-9_-]{20,}$/.test(k.trim());
 const enviarChave = () => $('#eq-enviar-chave').checked && chaveValida(chaveApiLocal());
 function pacoteEquipe(){
-  const pac = {app:'calculadora-cheques', versao:2, versaoCalc:VERSAO_CALC, exportadoEm:agora(), enviadoPor:usuario(), operacoes:carregarOps()};
+  const pac = {app:'calculadora-cheques', versao:2, versaoCalc:VERSAO_CALC, exportadoEm:agora(), enviadoPor:usuario(), operacoes:carregarOps(), despesas:carregarDespesas()};
   if (enviarChave()) pac.chaveApi = chaveApiLocal().trim();
   return pac;
 }
 async function fazerBackup(){
-  const ops = carregarOps(); if (!ops.length && !enviarChave()){ alert('Não há operações aceitas para compartilhar.'); return; }
+  const ops = carregarOps(); if (!ops.length && !carregarDespesas().length && !enviarChave()){ alert('Não há operações nem despesas para compartilhar.'); return; }
   const quando = new Date(), dd = n => String(n).padStart(2,'0');
   const nome = `2RPL-operacoes-${dd(quando.getDate())}-${dd(quando.getMonth()+1)}-${quando.getFullYear()}-${dd(quando.getHours())}h${dd(quando.getMinutes())}.json`;
   const conteudo = JSON.stringify(pacoteEquipe(), null, 1);
@@ -1127,12 +1189,16 @@ async function restaurarBackup(arq){
   const recebidas = Array.isArray(dados) ? dados : dados?.operacoes;
   if (!Array.isArray(recebidas)){ statusEquipe('erro', 'Este arquivo não é uma atualização da calculadora.'); return; }
   const r = mesclarOps(carregarOps(), recebidas);
+  const rd = mesclarDespesas(carregarDespesas(), dados.despesas);
+  try { salvarDespesas(rd.despesas); } catch(e){}
   let chave = '';
   if (chaveValida(dados.chaveApi) && dados.chaveApi.trim() !== chaveApiLocal().trim()){ chave = chaveApiLocal() ? 'atualizada' : 'recebida'; gravarChaveApi(dados.chaveApi.trim()); }
   try { salvarOps(r.ops); } catch(e){ statusEquipe('erro', 'Não foi possível guardar neste navegador.'); return; }
   atualizarContOps(); renderOps();
   const quando = dados.exportadoEm ? new Date(dados.exportadoEm).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '';
   const itens = [];
+  if (rd.novas) itens.push(plural(rd.novas, 'despesa nova', 'despesas novas'));
+  if (rd.excluidas) itens.push(plural(rd.excluidas, 'despesa excluída', 'despesas excluídas'));
   if (r.novas.length) itens.push(`${plural(r.novas.length,'operação nova','operações novas')}: ${r.novas.map(esc).join(', ')}`);
   if (r.pagamentos) itens.push(`${plural(r.pagamentos,'pagamento atualizado','pagamentos atualizados')}`);
   if (r.exclusoes.length) itens.push(`${plural(r.exclusoes.length,'operação excluída','operações excluídas')}: ${r.exclusoes.map(esc).join(', ')}`);
@@ -1168,6 +1234,108 @@ async function restaurarBackup(arq){
   $('#eq-enviar-chave').onchange = () => { try { localStorage.setItem('calcCheques.enviarChave', $('#eq-enviar-chave').checked ? '1' : '0'); } catch(e){} };
   if (!usuario()) pedirUsuario();
   atualizarContOps();
+})();
+
+/* ================= RESULTADO E DESPESAS =================
+   Despesas guardadas no navegador e compartilhadas com a equipe junto com as operações. */
+const CHAVE_DESP = 'calcCheques.despesas';
+const CATEGORIAS = ['Contador', 'Taxas bancárias', 'Tributos', 'Outros'];
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+function carregarDespesas(){ try { const v = JSON.parse(localStorage.getItem(CHAVE_DESP)); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
+function salvarDespesas(d){ localStorage.setItem(CHAVE_DESP, JSON.stringify(d)); }
+const despesasAtivas = () => carregarDespesas().filter(d => !d.excluida);
+/* Mesmo dia em meses seguintes (dia 31 vira o último dia do mês curto) */
+function somaMeses(iso, n){ const [a,m,d] = iso.split('-').map(Number); const fim = new Date(Date.UTC(a, m-1+n+1, 0)).getUTCDate();
+  return new Date(Date.UTC(a, m-1+n, Math.min(d, fim))).toISOString().slice(0,10); }
+/* Receita de uma operação: tudo o que foi descontado do cliente, menos o IOF (que é do governo) */
+const receitaOp = o => o.total.juros + o.total.adval + o.total.tarifa;
+/* Resumo de um período: ano 'aaaa' e mês '01'..'12' ou '' (ano inteiro). Função pura, testável. */
+function resumoPeriodo(ops, despesas, ano, mes){
+  const no = iso => iso && iso.startsWith(mes ? `${ano}-${mes}` : `${ano}-`);
+  const opsP = ops.filter(o => no(o.paramsTxt.aceite)), dpP = despesas.filter(d => no(d.data));
+  const receita = opsP.reduce((s,o) => s + receitaOp(o), 0), despesa = dpP.reduce((s,d) => s + d.valor, 0);
+  const capital = opsP.reduce((s,o) => s + o.total.desembolso, 0), iof = opsP.reduce((s,o) => s + o.total.iof, 0);
+  const porCat = Object.fromEntries(CATEGORIAS.map(c => [c, dpP.filter(d => d.categoria === c).reduce((s,d) => s + d.valor, 0)]));
+  const resultado = receita - despesa;
+  return {ops: opsP.length, receita, despesa, resultado, capital, iof, porCat,
+    margem: receita ? resultado / receita : null, retorno: capital ? resultado / capital : null, despesas: dpP};
+}
+const pctTxt = v => v == null ? '—' : fmtNum(v * 100, 2) + '%';
+const sinal = v => v < 0 ? 'neg' : 'pos';
+function anosDisponiveis(){
+  const anos = new Set([hoje().slice(0,4)]);
+  opsAtivas().forEach(o => o.paramsTxt?.aceite && anos.add(o.paramsTxt.aceite.slice(0,4)));
+  despesasAtivas().forEach(d => d.data && anos.add(d.data.slice(0,4)));
+  return [...anos].sort().reverse();
+}
+function renderResultado(){
+  const selAno = $('#rs-ano'), atualAno = selAno.value || hoje().slice(0,4);
+  selAno.innerHTML = anosDisponiveis().map(a => `<option${a===atualAno?' selected':''}>${a}</option>`).join('');
+  const ano = selAno.value, mes = $('#rs-mes').value, ops = opsAtivas(), desp = despesasAtivas();
+  const r = resumoPeriodo(ops, desp, ano, mes);
+  const per = mes ? `${MESES[+mes-1]} de ${ano}` : ano;
+  $('#rs-kpis').innerHTML = [
+    ['Receita (juros e tarifas)', rs(r.receita), ''], ['Despesas', rs(r.despesa), ''],
+    [`Resultado · ${per}`, rs(r.resultado), sinal(r.resultado)], ['Margem (resultado ÷ receita)', pctTxt(r.margem), ''],
+    ['Capital aplicado (líquido pago)', rs(r.capital), ''], ['Retorno sobre o capital', pctTxt(r.retorno), r.retorno == null ? '' : sinal(r.retorno)],
+    ['Operações no período', r.ops, ''], ['IOF retido (não é receita)', rs(r.iof), ''],
+  ].map(([a,b,c]) => `<div><span>${a}</span><b class="num ${c}">${b}</b></div>`).join('');
+  const linhas = MESES.map((nome, i) => { const m = String(i+1).padStart(2,'0'); return {m, nome, ...resumoPeriodo(ops, desp, ano, m)}; });
+  const tot = resumoPeriodo(ops, desp, ano, '');
+  $('#rs-meses').innerHTML = `<thead><tr><th>Mês</th><th>Operações</th><th>Capital aplicado</th><th>Receita</th><th>Despesas</th><th>Resultado</th></tr></thead><tbody>` +
+    linhas.map(l => `<tr class="${l.m===mes?'atual':''}"><td>${l.nome}</td><td class="num">${l.ops||'—'}</td><td class="num">${l.capital?brl(l.capital):'—'}</td><td class="num">${l.receita?brl(l.receita):'—'}</td><td class="num">${l.despesa?brl(l.despesa):'—'}</td><td class="num ${l.receita||l.despesa?sinal(l.resultado):''}">${l.receita||l.despesa?brl(l.resultado):'—'}</td></tr>`).join('') +
+    `</tbody><tfoot><tr><td>Total ${ano}</td><td class="num">${tot.ops}</td><td class="num">${brl(tot.capital)}</td><td class="num">${brl(tot.receita)}</td><td class="num">${brl(tot.despesa)}</td><td class="num ${sinal(tot.resultado)}">${brl(tot.resultado)}</td></tr></tfoot>`;
+  $('#dp-cats').innerHTML = CATEGORIAS.map(c => `<div><span>${c} · ${per}</span><b class="num">${rs(r.porCat[c])}</b></div>`).join('');
+  const lista = r.despesas.sort((a,b) => b.data.localeCompare(a.data));
+  $('#dp-lista').innerHTML = lista.length ? lista.map(d => `<div class="desp" data-id="${esc(d.id)}">
+      <span class="data num">${fmtData(d.data)}</span><span class="cat">${esc(d.categoria)}</span>
+      <span class="desc">${esc(d.descricao || '—')}${d.criadaPor?` <small>· ${esc(d.criadaPor)}</small>`:''}</span>
+      <span class="val num">${rs(d.valor)}</span><button class="ic rm" title="Excluir despesa">✕</button></div>`).join('')
+    : `<div class="vazio-ops">Nenhuma despesa em ${per}.</div>`;
+  $('#dp-lista').querySelectorAll('.desp').forEach(el => el.querySelector('button').onclick = () => excluirDespesa(el.dataset.id));
+}
+function adicionarDespesa(){
+  const data = $('#dp-data').value, valor = num($('#dp-valor').value), cat = $('#dp-cat').value, desc = limpaNome($('#dp-desc').value);
+  const vezes = Math.min(60, Math.max(1, Math.trunc(num($('#dp-rep').value)) || 1));
+  if (!data){ $('#dp-data').focus(); return; }
+  if (!(valor > 0)){ $('#dp-valor').focus(); return; }
+  const quem = garantirUsuario(); if (!quem) return;
+  const desp = carregarDespesas(), quando = agora(), base = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  for (let i = 0; i < vezes; i++)
+    desp.push({id:`${base}-${i}`, data: somaMeses(data, i), categoria: cat, descricao: desc, valor, criadaPor: quem, criadaEm: quando, atualizadoEm: quando});
+  try { salvarDespesas(desp); } catch(e){ alert('Não foi possível guardar a despesa neste navegador.'); return; }
+  marcarPendente(true);
+  $('#dp-valor').value = ''; $('#dp-desc').value = ''; $('#dp-rep').value = '1';
+  $('#dp-ok').textContent = vezes > 1 ? `✓ ${vezes} lançamentos mensais incluídos` : '✓ Despesa incluída';
+  renderResultado();
+}
+function excluirDespesa(id){
+  const desp = carregarDespesas(), d = desp.find(x => x.id === id); if (!d) return;
+  if (!confirm(`Excluir a despesa “${d.descricao || d.categoria}” de ${rs(d.valor)} (${fmtData(d.data)})?`)) return;
+  const quem = garantirUsuario(); if (!quem) return;
+  Object.assign(d, {excluida:true, excluidaEm:agora(), excluidaPor:quem, atualizadoEm:agora()});
+  salvarDespesas(desp); marcarPendente(true); renderResultado();
+}
+/* Junta despesas recebidas da equipe: nova entra; exclusão prevalece; demais campos pela alteração mais recente */
+function mesclarDespesas(locais, recebidas){
+  const mapa = new Map(locais.map(d => [d.id, {...d}])); let novas = 0, excluidas = 0;
+  for (const r of recebidas || []){
+    if (!r || !r.id || !r.data || typeof r.valor !== 'number') continue;
+    const l = mapa.get(r.id);
+    if (!l){ mapa.set(r.id, {...r}); if (!r.excluida) novas++; continue; }
+    if (r.excluida && !l.excluida){ Object.assign(l, {excluida:true, excluidaEm:r.excluidaEm, excluidaPor:r.excluidaPor}); excluidas++; }
+    else if (!l.excluida && (r.atualizadoEm || '') > (l.atualizadoEm || '')) Object.assign(l, r);
+  }
+  return {despesas: [...mapa.values()], novas, excluidas};
+}
+(function ligarResultado(){
+  $('#rs-mes').innerHTML = '<option value="">Ano inteiro</option>' + MESES.map((n,i) => `<option value="${String(i+1).padStart(2,'0')}">${n}</option>`).join('');
+  $('#dp-cat').innerHTML = CATEGORIAS.map(c => `<option>${c}</option>`).join('');
+  $('#dp-data').value = hoje();
+  $('#rs-ano').onchange = renderResultado; $('#rs-mes').onchange = renderResultado;
+  $('#dp-add').onclick = adicionarDespesa;
+  formatarAoSair($('#dp-valor'));
+  $('#dp-valor').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); adicionarDespesa(); } });
 })();
 
 /* ================= AGENDA (vencimentos dos cheques) =================
