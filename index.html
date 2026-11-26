@@ -259,6 +259,8 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
 .usuarios .btn.ativo{background:var(--pri);border-color:var(--pri);color:var(--pri-tx)}
 .inp select{flex:1;min-width:0;border:0;background:none;color:var(--tx);font:inherit;padding:8px 10px;outline:none}
 
+.btn.limpar-op{padding:6px 12px;font-size:13px;white-space:nowrap;flex:none;color:var(--mog);border-color:var(--cara)}
+.btn.limpar-op:hover{background:var(--cara2)}
 .ver-info{margin-top:10px;font-size:12px;padding:5px 10px}
 .ver-info .n-av{color:var(--neg);font-weight:700;margin-left:6px}
 .info-extra{display:none}
@@ -372,7 +374,8 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
 <section id="aba-desconto" class="layout">
   <div>
     <div class="card">
-      <div class="card-tit"><span class="passo">1</span><h2>Condições da operação</h2></div>
+      <div class="card-tit"><span class="passo">1</span><h2>Condições da operação</h2>
+        <button class="btn limpar-op ac" id="limpar-op" title="Descarta a operação em andamento (não aceita) e começa outra"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg> Limpar operação</button></div>
       <div class="campos">
         <label class="f"><span>Data de aceite</span><div class="inp"><input type="date" id="p-aceite"></div></label>
         <label class="f"><span>Taxa de juros</span><div class="inp"><input id="p-taxa" class="dir" inputmode="decimal"><i>% a.m.</i></div><small>Padrão: 4% ao mês</small></label>
@@ -500,13 +503,13 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
   </div>
   <div class="dlg-c oculto" id="dlg-ok">
     <div class="ok-msg"><span style="font-size:22px">✓</span><span id="ok-texto"></span></div>
-    <p class="mut" style="font-size:13px;margin:0">Envie a atualização no grupo do WhatsApp para a equipe receber esta operação. Depois, comece outra operação ou continue com esta na tela.</p>
+    <p class="mut" style="font-size:13px;margin:0">A tela foi limpa para a próxima operação. Envie a atualização no grupo do WhatsApp para a equipe receber esta operação.</p>
     <div class="dlg-acts">
-      <button class="btn lev" id="ok-fechar">Continuar com esta</button>
+      <button class="btn lev" id="ok-fechar">Fechar</button>
       <button class="btn" id="ok-ver">Ver operações aceitas</button>
       <button class="btn" id="ok-agenda"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> Agenda</button>
       <button class="btn zap-env" id="ok-compartilhar">Compartilhar com a equipe</button>
-      <button class="btn pri" id="ok-nova">Nova operação</button>
+      <button class="btn" id="ok-zap">Mensagem para o cliente</button>
     </div>
   </div>
 </dialog>
@@ -782,8 +785,11 @@ function calcularDesc(){
   const ac = $('#aceitar-op'); ac.disabled = !n; $('#zap-op').disabled = !n;
   ac.title = n ? 'Guardar esta operação em “Operações aceitas”' : 'Informe ao menos um cheque com vencimento e valor';
 }
-function limparDesc(){ if(confirm('Limpar cliente, condições e cheques? A taxa volta a 4% e o floating a 2 dias.')){
-  const n=novoEstado(); estado.cliente=n.cliente; estado.params=n.params; estado.cheques=n.cheques; ligarCabecalho(); montarDesc(); } }
+function temOperacaoDigitada(){ return estado.cheques.some(c => c.venc || c.valor || c.sacador) || !!limpaNome(estado.cliente.nome); }
+function limparDesc(){
+  if (temOperacaoDigitada() && !confirm('Limpar a operação em andamento?\n\nEla ainda não foi aceita e será descartada. A taxa volta a 4% e o floating a 2 dias.')) return;
+  novaOperacao(); window.scrollTo({top:0, behavior:'smooth'});
+}
 function exemploDesc(){
   estado.cliente = {nome:'CLIENTE EXEMPLO',doc:'',tel:'',end:''};
   estado.params = {aceite:'2024-07-08', taxa:'10', adval:'0', tarifa:'0', floating:'0', iof:'0'};
@@ -795,6 +801,7 @@ $('#bm-resumo').onclick = () => document.querySelector('#aba-desconto aside').sc
 document.body.classList.add('aba-desconto');
 $('#ex-desc').onclick = exemploDesc;
 $('#limpa-desc').onclick = limparDesc;
+$('#limpar-op').onclick = limparDesc;
 $('#aceitar-op').onclick = abrirAceite;
 $('#zap-op').onclick = () => abrirZap(operacaoAtual());
 
@@ -899,6 +906,7 @@ function confirmarAceite(){
   atualizarContOps(); marcarPendente(true);
   $('#ok-texto').textContent = `Operação “${final}” aceita e guardada.`;
   $('#dlg-form').classList.add('oculto'); $('#dlg-ok').classList.remove('oculto');
+  novaOperacao(); // a operação aceita já está guardada: a tela fica pronta para a próxima
 }
 function novaOperacao(){
   const n = novoEstado(); estado.cliente = n.cliente; estado.params = n.params; estado.cheques = n.cheques;
@@ -1122,7 +1130,7 @@ async function restaurarBackup(arq){
   $('#ac-cancelar').onclick = () => $('#dlg-aceitar').close();
   $('#ac-confirmar').onclick = confirmarAceite;
   $('#ok-fechar').onclick = () => $('#dlg-aceitar').close();
-  $('#ok-nova').onclick = () => { $('#dlg-aceitar').close(); novaOperacao(); };
+  $('#ok-zap').onclick = () => abrirZap(carregarOps().find(o => o.id === ultimoAceiteId));
   $('#ok-ver').onclick = () => { $('#dlg-aceitar').close(); irParaAba('operacoes'); };
   $('#ops-busca').oninput = renderOps;
   document.querySelectorAll('#ops-filtro button').forEach(b => b.onclick = () => { filtroOps = b.dataset.f; renderOps(); });
