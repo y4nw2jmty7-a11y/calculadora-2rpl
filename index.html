@@ -276,6 +276,16 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
   .op-main .out b{white-space:normal}
 }
 @media print{ .barra-movel{display:none!important} }
+@media (max-width:600px){
+  .dlg-acts{flex-direction:column-reverse;align-items:stretch}
+  .dlg-acts .btn{justify-content:center}
+  .dlg-acts .zap-ok{margin:0;text-align:center}
+}
+
+.ag-google{display:flex;flex-direction:column;gap:6px}
+.ag-google a{display:flex;justify-content:space-between;gap:10px;text-decoration:none;color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;font-size:13px;background:var(--card)}
+.ag-google a:hover{border-color:var(--pri)}
+.ag-google a span{color:#1a73e8;font-weight:600;white-space:nowrap}
 
 /* ---------- mensagem WhatsApp ---------- */
 .btn.zap{width:100%;justify-content:center;margin-top:8px;padding:10px;font-weight:600;color:#1f7a4a;border-color:#1f7a4a}
@@ -478,9 +488,31 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
     <div class="dlg-acts">
       <button class="btn lev" id="ok-fechar">Continuar com esta</button>
       <button class="btn" id="ok-ver">Ver operações aceitas</button>
+      <button class="btn" id="ok-agenda"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> Agenda</button>
       <button class="btn zap-env" id="ok-compartilhar">Compartilhar com a equipe</button>
       <button class="btn pri" id="ok-nova">Nova operação</button>
     </div>
+  </div>
+</dialog>
+
+<dialog id="dlg-agenda">
+  <div class="dlg-c">
+    <h2>Adicionar à agenda</h2>
+    <p class="mut" style="margin:0 0 12px;font-size:13px" id="ag-sub"></p>
+    <div class="linhas" id="ag-lista"></div>
+    <label class="f" style="margin-bottom:12px"><span>Aviso</span><div class="inp"><select id="ag-aviso">
+      <option value="dia">No dia do vencimento, às 9h</option>
+      <option value="vespera">Na véspera e no dia, às 9h</option>
+    </select></div></label>
+    <div class="dlg-acts" style="justify-content:stretch">
+      <button class="btn pri" id="ag-ics" style="flex:1;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg> Agenda do iPhone, Mac ou Outlook</button>
+    </div>
+    <p class="mut" style="font-size:12px;margin:8px 0 0">Baixa um arquivo de agenda: toque nele (ou abra-o) e confirme “Adicionar todos”. Cheques já pagos ficam de fora.</p>
+    <details class="mais" style="margin-top:12px"><summary><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Usa o Google Agenda (Android)?</summary>
+      <p class="mut" style="font-size:12px;margin:8px 0">Toque em cada cheque para criar o evento no Google Agenda. O aviso segue a configuração de notificações da sua agenda.</p>
+      <div id="ag-google" class="ag-google"></div>
+    </details>
+    <div class="dlg-acts"><span class="zap-ok" id="ag-ok"></span><button class="btn lev" id="ag-fechar">Fechar</button></div>
   </div>
 </dialog>
 
@@ -753,7 +785,7 @@ $('#zap-op').onclick = () => abrirZap(operacaoAtual());
 /* ================= OPERAÇÕES ACEITAS =================
    Guardadas neste navegador (localStorage), com os valores calculados no momento do aceite. */
 const CHAVE_OPS = 'calcCheques.operacoes';
-const VERSAO_CALC = '2026-11-25';
+const VERSAO_CALC = '2026-11-26';
 const CHAVE_USUARIO = 'calcCheques.usuario', CHAVE_PEND = 'calcCheques.pendenteEnvio';
 const agora = () => new Date().toISOString();
 /* Participantes da 2RPL (pedido do usuário, 25/11/2026) */
@@ -844,7 +876,8 @@ function confirmarAceite(){
   definirUsuario(quem);
   const ops = carregarOps(), final = nomeUnico(nome, ops), quando = agora();
   const {incompletos, ...dados} = opPendente;
-  ops.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2,7), nome: final, aceitaEm: quando, aceitaPor: quem, atualizadoEm: quando, ...dados});
+  ultimoAceiteId = Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  ops.push({id: ultimoAceiteId, nome: final, aceitaEm: quando, aceitaPor: quem, atualizadoEm: quando, ...dados});
   try { salvarOps(ops); }
   catch(e){ alert('Não foi possível guardar a operação neste navegador (armazenamento cheio ou bloqueado). Faça um backup e tente de novo.'); return; }
   atualizarContOps(); marcarPendente(true);
@@ -911,7 +944,7 @@ function renderOps(){
         <div class="out"><span>Data de aceite</span><b class="num">${fmtData(P.aceite)}</b></div>
         <div class="out"><span>Valor de face</span><b class="num">${rs(T.valor)}</b></div>
         <div class="out liq"><span>Líquido pago</span><b class="num">${rs(T.desembolso)}</b></div>
-        <div class="acts"><button class="ic rm" data-acao="excluir-rapido" title="Excluir operação"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button><button class="ic tg" title="Detalhes da operação"><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div>
+        <div class="acts"><button class="ic" data-acao="agenda" title="Adicionar os vencimentos à agenda"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button><button class="ic rm" data-acao="excluir-rapido" title="Excluir operação"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button><button class="ic tg" title="Detalhes da operação"><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div>
       </div>
       <div class="op-chqs">${o.cheques.map((c,i) => { const st = statusCheque(c); return `<div class="op-chq ${st.cls}" data-i="${i}">
         <input type="checkbox" class="pg" ${c.pagoEm?'checked':''} title="Marcar o cheque como pago" aria-label="Cheque ${i+1} pago">
@@ -925,7 +958,7 @@ function renderOps(){
         <div class="rolar"><table class="tabela"><thead><tr><th>#</th><th>Vencimento</th><th>Emitente</th><th>Banco / Ag. / Conta</th><th>Nº</th><th class="n">Valor</th><th class="n">Prazo</th><th class="n">Juros</th><th class="n">IOF</th><th class="n">Líquido</th></tr></thead><tbody>
         ${o.cheques.map((c,i)=>`<tr><td>${i+1}</td><td>${fmtData(c.venc)}</td><td>${esc(c.sacador)}</td><td>${esc([c.banco,c.agencia,c.conta].filter(Boolean).join(' / '))}</td><td>${esc(c.numero)}</td><td class="n num">${brl(c.valor)}</td><td class="n num">${c.prazo} d</td><td class="n num">${brl(c.juros)}</td><td class="n num">${brl(c.iof)}</td><td class="n num">${brl(c.desembolso)}</td></tr>`).join('')}
         </tbody><tfoot><tr><td colspan="5">Total</td><td class="n num">${brl(T.valor)}</td><td></td><td class="n num">${brl(T.juros)}</td><td class="n num">${brl(T.iof)}</td><td class="n num">${brl(T.desembolso)}</td></tr></tfoot></table></div>
-        <div class="acoes"><button class="btn" data-acao="zap">Mensagem para o cliente</button><button class="btn" data-acao="reabrir">Reabrir cópia na calculadora</button><button class="btn perigo" data-acao="excluir">Excluir</button></div>
+        <div class="acoes"><button class="btn" data-acao="agenda2">Adicionar à agenda</button><button class="btn" data-acao="zap">Mensagem para o cliente</button><button class="btn" data-acao="reabrir">Reabrir cópia na calculadora</button><button class="btn perigo" data-acao="excluir">Excluir</button></div>
       </div></div>`; }).join('');
   $('#ops-lista').querySelectorAll('.op').forEach(div => {
     const id = div.dataset.id;
@@ -942,6 +975,8 @@ function renderOps(){
     div.querySelector('[data-acao=zap]').onclick = () => abrirZap(carregarOps().find(x => x.id === id));
     div.querySelector('[data-acao=excluir]').onclick = () => excluirOp(id);
     div.querySelector('[data-acao=excluir-rapido]').onclick = e => { e.stopPropagation(); excluirOp(id); };
+    div.querySelector('[data-acao=agenda]').onclick = e => { e.stopPropagation(); abrirAgenda(id); };
+    div.querySelector('[data-acao=agenda2]').onclick = () => abrirAgenda(id);
   });
 }
 function reabrirOp(id){
@@ -1056,6 +1091,7 @@ async function restaurarBackup(arq){
   $('#ops-backup').onclick = fazerBackup;
   $('#ops-restaurar').onclick = () => $('#ops-arq').click();
   $('#ops-arq').onchange = e => { if (e.target.files[0]) restaurarBackup(e.target.files[0]); e.target.value = ''; };
+  $('#ok-agenda').onclick = () => abrirAgenda(ultimoAceiteId);
   $('#ok-compartilhar').onclick = () => { $('#dlg-aceitar').close(); irParaAba('operacoes'); fazerBackup(); };
   $('#eq-trocar').onclick = pedirUsuario;
   const aba = $('#aba-operacoes');
@@ -1065,6 +1101,73 @@ async function restaurarBackup(arq){
   definirUsuario(usuario()); marcarPendente(temPendente());
   if (!usuario()) pedirUsuario();
   atualizarContOps();
+})();
+
+/* ================= AGENDA (vencimentos dos cheques) =================
+   Gera um arquivo iCalendar (.ics), aceito pelas agendas do iPhone, Mac, Android e Outlook,
+   com um evento de dia inteiro por cheque em aberto e aviso às 9h (e, se escolhido, na véspera). */
+let ultimoAceiteId = null, agendaOpId = null;
+const CHAVE_AVISO = 'calcCheques.avisoAgenda';
+const dataICS = iso => iso.replace(/-/g, '');
+function diaSeguinte(iso){ const [a,m,d] = iso.split('-').map(Number); return new Date(Date.UTC(a, m-1, d+1)).toISOString().slice(0,10); }
+const escICS = t => String(t ?? '').replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+/* Linhas do .ics com no máximo 75 caracteres (continuação começa com espaço) */
+function dobraICS(l){ // até 75 bytes por linha (UTF-8), sem partir caracteres acentuados
+  const enc = new TextEncoder(), out = []; let atual = '', bytes = 0;
+  for (const ch of l){
+    const n = enc.encode(ch).length;
+    if (bytes + n > 75){ out.push(atual); atual = ' '; bytes = 1; }
+    atual += ch; bytes += n;
+  }
+  out.push(atual); return out.join('\r\n');
+}
+function tituloEvento(op, c, i){ return `Venc. cheque ${i+1}/${op.cheques.length} — ${op.nome} — ${rs(c.valor)}`; }
+function descricaoEvento(op, c){
+  return [`Operação: ${op.nome}${op.cliente?.nome ? ' (cliente ' + op.cliente.nome + ')' : ''}`,
+    `Cheque${c.numero ? ' nº ' + c.numero : ''}${c.banco ? ' · banco ' + c.banco : ''}${c.agencia ? ' · ag. ' + c.agencia : ''}${c.conta ? ' · conta ' + c.conta : ''}`,
+    c.sacador ? `Emitente: ${c.sacador}` : '', `Valor: ${rs(c.valor)} · vencimento ${fmtData(c.venc)}`,
+    `Data de aceite: ${fmtData(op.paramsTxt.aceite)}`, 'Depois de compensado, marque como pago na calculadora (Operações aceitas).'].filter(Boolean).join('\n');
+}
+function chequesParaAgenda(op){ return op.cheques.map((c,i) => ({c, i})).filter(x => !x.c.pagoEm); }
+function gerarICS(op, aviso = 'dia'){
+  const agoraUTC = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//2RPL//Calculadora de Cheques//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+  for (const {c, i} of chequesParaAgenda(op)){
+    L.push('BEGIN:VEVENT', `UID:${op.id}-${i}@calculadora-2rpl`, `DTSTAMP:${agoraUTC}`,
+      `DTSTART;VALUE=DATE:${dataICS(c.venc)}`, `DTEND;VALUE=DATE:${dataICS(diaSeguinte(c.venc))}`,
+      `SUMMARY:${escICS(tituloEvento(op, c, i))}`, `DESCRIPTION:${escICS(descricaoEvento(op, c))}`, 'TRANSP:TRANSPARENT',
+      'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${escICS('Vence hoje: ' + tituloEvento(op, c, i))}`, 'TRIGGER:PT9H', 'END:VALARM');
+    if (aviso === 'vespera') L.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${escICS('Vence amanhã: ' + tituloEvento(op, c, i))}`, 'TRIGGER:-PT15H', 'END:VALARM');
+    L.push('END:VEVENT');
+  }
+  L.push('END:VCALENDAR');
+  return L.map(dobraICS).join('\r\n') + '\r\n';
+}
+function linkGoogle(op, c, i){
+  const q = new URLSearchParams({action:'TEMPLATE', text:tituloEvento(op, c, i), dates:`${dataICS(c.venc)}/${dataICS(diaSeguinte(c.venc))}`, details:descricaoEvento(op, c)});
+  return 'https://calendar.google.com/calendar/render?' + q.toString();
+}
+function abrirAgenda(id){
+  const op = carregarOps().find(o => o.id === id); if (!op) return;
+  agendaOpId = id;
+  const lista = chequesParaAgenda(op);
+  $('#ag-sub').textContent = `Operação “${op.nome}”: ` + (lista.length ? `${plural(lista.length,'cheque em aberto','cheques em aberto')}.` : 'todos os cheques já estão pagos.');
+  $('#ag-lista').innerHTML = lista.map(({c,i}) => `<div class="linha"><span class="rot">Cheque ${i+1} · ${fmtData(c.venc)}</span><span class="num">${rs(c.valor)}</span></div>`).join('') || '<div class="linha"><span class="rot">Nada a agendar.</span></div>';
+  $('#ag-google').innerHTML = lista.map(({c,i}) => `<a href="${esc(linkGoogle(op,c,i))}" target="_blank" rel="noopener">Cheque ${i+1} · ${fmtData(c.venc)} · ${rs(c.valor)}<span>Google Agenda ›</span></a>`).join('');
+  $('#ag-ics').disabled = !lista.length;
+  try { $('#ag-aviso').value = localStorage.getItem(CHAVE_AVISO) || 'dia'; } catch(e){}
+  $('#ag-ok').textContent = '';
+  if (!$('#dlg-agenda').open) $('#dlg-agenda').showModal();
+}
+(function ligarAgenda(){
+  $('#ag-fechar').onclick = () => $('#dlg-agenda').close();
+  $('#ag-aviso').onchange = () => { try { localStorage.setItem(CHAVE_AVISO, $('#ag-aviso').value); } catch(e){} };
+  $('#ag-ics').onclick = () => {
+    const op = carregarOps().find(o => o.id === agendaOpId); if (!op) return;
+    const nome = `vencimentos-${op.nome.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').toLowerCase()}.ics`;
+    baixar(nome, gerarICS(op, $('#ag-aviso').value), 'text/calendar;charset=utf-8');
+    $('#ag-ok').textContent = '✓ Arquivo gerado: abra-o para adicionar à agenda';
+  };
 })();
 
 /* ================= MENSAGEM PARA O CLIENTE (WhatsApp) =================
