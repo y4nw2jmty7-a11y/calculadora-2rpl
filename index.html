@@ -225,6 +225,10 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
 @media (max-width:760px){
   .op-main{grid-template-columns:1fr 1fr}
   .op-main .op-nome{grid-column:1 / -1}
+  .op-main .acts{grid-column:1 / -1;justify-content:flex-start;gap:8px;border-top:1px dashed var(--bd);padding-top:8px}
+  .op-main .acts .ic{width:auto;height:auto;padding:6px 10px;border:1px solid var(--bd2);border-radius:8px;display:inline-flex;align-items:center;gap:6px;font-size:13px}
+  .op-main .acts .excluir-op{color:var(--neg);border-color:var(--neg)}
+  .op-main .acts .so-movel{display:inline}
   .op-chq{grid-template-columns:22px 1fr auto;row-gap:4px}
   .op-chq .ident{grid-column:2 / -1}
   .op-chq>div:nth-child(3){grid-column:2;white-space:nowrap}
@@ -237,6 +241,10 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
 .equipe{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--card2);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;margin-bottom:14px}
 .eq-quem{font-size:13px;color:var(--mut);margin-right:auto}
 .eq-quem b{color:var(--tx)}
+.ch-status{font-weight:600}
+.ch-status.ok{color:var(--ok)}
+.ch-status.falta{color:var(--neg)}
+.so-movel{display:none}
 .eq-chave{flex-basis:100%;order:4;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px;cursor:pointer}
 .eq-chave input{accent-color:var(--ok);width:16px;height:16px;margin:0}
 .eq-pend{font-size:12px;font-weight:600;color:var(--neg);flex-basis:100%;order:3}
@@ -405,6 +413,7 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
           <button class="btn lev" id="foto-esquecer">Esquecer chave</button>
         </div>
         <p>A leitura usa a IA Claude (modelo Claude Opus 5.5). Cada foto é enviada à Anthropic pela internet. O custo é de alguns centavos de dólar por foto, cobrados na sua conta da API (console.anthropic.com). A chave fica guardada só neste navegador. Confira sempre os dados lidos antes de usar o cálculo.</p>
+        <p class="ch-status" id="ch-status"></p>
       </details>
       <div class="foto-status" id="foto-status"></div>
       <div id="aviso-desc"></div>
@@ -947,7 +956,7 @@ function renderOps(){
         <div class="out"><span>Data de aceite</span><b class="num">${fmtData(P.aceite)}</b></div>
         <div class="out"><span>Valor de face</span><b class="num">${rs(T.valor)}</b></div>
         <div class="out liq"><span>Líquido pago</span><b class="num">${rs(T.desembolso)}</b></div>
-        <div class="acts"><button class="ic" data-acao="agenda" title="Adicionar os vencimentos à agenda"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></button><button class="ic rm" data-acao="excluir-rapido" title="Excluir operação"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button><button class="ic tg" title="Detalhes da operação"><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div>
+        <div class="acts"><button class="ic" data-acao="agenda" title="Adicionar os vencimentos à agenda"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span class="so-movel">Agenda</span></button><button class="ic rm excluir-op" data-acao="excluir-rapido" title="Excluir operação"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg><span class="so-movel">Excluir</span></button><button class="ic tg" title="Detalhes da operação"><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg><span class="so-movel">Detalhes</span></button></div>
       </div>
       <div class="op-chqs">${o.cheques.map((c,i) => { const st = statusCheque(c); return `<div class="op-chq ${st.cls}" data-i="${i}">
         <input type="checkbox" class="pg" ${c.pagoEm?'checked':''} title="Marcar o cheque como pago" aria-label="Cheque ${i+1} pago">
@@ -1016,7 +1025,15 @@ function exportarCSV(){
    Ao receber, junta com as deste computador: operação nova entra; pagamento e exclusão valem pela alteração mais recente. */
 /* Chave da API da Anthropic (leitura por foto): guardada só no navegador; pode viajar no arquivo da equipe, nunca no código publicado */
 function chaveApiLocal(){ try { return localStorage.getItem('calcCheques.apiKey') || ''; } catch(e){ return ''; } }
-function gravarChaveApi(k){ try { localStorage.setItem('calcCheques.apiKey', k); } catch(e){} const el = document.getElementById('foto-chave'); if (el) el.value = k; }
+function gravarChaveApi(k){ try { localStorage.setItem('calcCheques.apiKey', k); } catch(e){} const el = document.getElementById('foto-chave'); if (el) el.value = k; statusChave(); }
+const abertoComoApp = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+/* Mostra se a chave está guardada e se a calculadora está aberta como app ou no navegador (no iPhone, cada um guarda dados separados) */
+function statusChave(){
+  const el = document.getElementById('ch-status'); if (!el) return;
+  const ok = chaveValida(chaveApiLocal());
+  el.className = 'ch-status ' + (ok ? 'ok' : 'falta');
+  el.textContent = (ok ? '✓ Chave guardada neste aparelho' : '⚠ Nenhuma chave guardada aqui') + ' · aberta ' + (abertoComoApp() ? 'como app da Tela de Início' : 'no navegador');
+}
 const chaveValida = k => typeof k === 'string' && /^sk-ant-[A-Za-z0-9_-]{20,}$/.test(k.trim());
 const enviarChave = () => $('#eq-enviar-chave').checked && chaveValida(chaveApiLocal());
 function pacoteEquipe(){
@@ -1436,7 +1453,7 @@ async function processarFotos(arquivos){
   }
   if (!$('#foto-chave').value.trim()){
     $('#foto-cfg').open = true; $('#foto-chave').focus();
-    const s = linhaStatus({name:'Falta a chave da API'}); s.fim('Informe a chave da API da Anthropic em ⚙ e envie a foto de novo.', true);
+    const s = linhaStatus({name:'Falta a chave da API'}); s.fim('Este ' + (abertoComoApp() ? 'app' : 'navegador') + ' ainda não tem a chave. Cole a chave em ⚙ ou receba o arquivo da equipe (Operações aceitas › Receber atualização) aqui mesmo, e envie a foto de novo.', true);
     return;
   }
   await Promise.all(arquivos.map(async arq => {
@@ -1459,8 +1476,9 @@ async function processarFotos(arquivos){
 (function ligarFoto(){
   const zona = $('#foto-zona'), arq = $('#foto-arq'), chave = $('#foto-chave');
   try { chave.value = localStorage.getItem(CHAVE_API) || ''; } catch(e){}
-  chave.oninput = () => { try { localStorage.setItem(CHAVE_API, chave.value.trim()); } catch(e){} };
-  $('#foto-esquecer').onclick = () => { chave.value = ''; try { localStorage.removeItem(CHAVE_API); } catch(e){} };
+  chave.oninput = () => { try { localStorage.setItem(CHAVE_API, chave.value.trim()); } catch(e){} statusChave(); };
+  $('#foto-esquecer').onclick = () => { chave.value = ''; try { localStorage.removeItem(CHAVE_API); } catch(e){} statusChave(); };
+  statusChave();
   $('#foto-cfg-btn').onclick = e => { e.stopPropagation(); $('#foto-cfg').open = !$('#foto-cfg').open; };
   zona.onclick = () => arq.click();
   $('#foto-camera').onclick = e => { e.stopPropagation(); $('#foto-cam').click(); };
@@ -1483,6 +1501,7 @@ async function processarFotos(arquivos){
 })();
 
 ligarCabecalho(); montarDesc();
+try { navigator.storage?.persist?.(); } catch(e){} // pede ao navegador para não apagar os dados guardados
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 $('#versao-calc').textContent = VERSAO_CALC.split('-').reverse().join('/');
 </script>
