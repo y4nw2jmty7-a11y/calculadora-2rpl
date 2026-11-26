@@ -343,6 +343,12 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
 .so-estreito{display:none}
 @media (max-width:760px){ .so-largo{display:none} .so-estreito{display:inline} .abas button{padding:6px 4px;font-size:13px} .abas .cont{margin-left:3px} }
 @media (max-width:400px){ .abas{gap:0;padding:2px} .abas button{flex:1 1 0;min-width:0;padding:6px 2px;font-size:12px} .abas .cont{font-size:10px;padding:0 4px;min-width:14px} .marca small{font-size:11px} }
+/* celular: contador vira balão no canto da aba, para todas ficarem numa linha só */
+@media (max-width:760px){
+  .abas button{position:relative;white-space:nowrap;display:flex;align-items:center;justify-content:center;min-height:40px}
+  .abas .cont{position:absolute;top:1px;right:2px;margin:0;font-size:10px;line-height:15px;min-width:15px;height:15px;padding:0 4px;border-radius:99px}
+  .abas .cont.zero,.abas #n-ops:empty{display:none}
+}
 
 /* ---------- mensagem WhatsApp ---------- */
 .btn.zap{width:100%;justify-content:center;margin-top:8px;padding:10px;font-weight:600;color:#1f7a4a;border-color:#1f7a4a}
@@ -1051,7 +1057,7 @@ function novaOperacao(){
   $('#foto-status').innerHTML = ''; ligarCabecalho(); montarDesc();
 }
 function irParaAba(a){ document.querySelector(`.abas button[data-aba=${a}]`).click(); }
-function atualizarContOps(){ $('#n-ops').textContent = opsAtivas().length; const nv = chequesVencidos().length; $('#n-venc').textContent = nv; $('#n-venc').classList.toggle('zero', !nv); }
+function atualizarContOps(){ $('#n-ops').textContent = opsAtivas().length; $('#n-ops').classList.toggle('zero', !opsAtivas().length); const nv = chequesVencidos().length; $('#n-venc').textContent = nv; $('#n-venc').classList.toggle('zero', !nv); }
 
 /* Situação de cada cheque e da operação (controle de pagamento) */
 const plural = (n, um, varios) => `${n} ${n===1?um:varios}`;
