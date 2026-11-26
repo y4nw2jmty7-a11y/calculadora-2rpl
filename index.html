@@ -237,6 +237,8 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
 .equipe{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--card2);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;margin-bottom:14px}
 .eq-quem{font-size:13px;color:var(--mut);margin-right:auto}
 .eq-quem b{color:var(--tx)}
+.eq-chave{flex-basis:100%;order:4;font-size:12px;color:var(--mut);display:flex;align-items:center;gap:6px;cursor:pointer}
+.eq-chave input{accent-color:var(--ok);width:16px;height:16px;margin:0}
 .eq-pend{font-size:12px;font-weight:600;color:var(--neg);flex-basis:100%;order:3}
 .eq-res{border:1px solid var(--bd);border-left:3px solid var(--ok);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:13px;background:var(--card)}
 .eq-res.erro{border-left-color:var(--neg);color:var(--neg)}
@@ -451,6 +453,7 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
       <div class="eq-pend oculto" id="eq-pend">⚠ Há alterações suas que a equipe ainda não recebeu.</div>
       <button class="btn zap-env" id="ops-backup" title="Gera o arquivo com todas as operações para enviar no grupo do WhatsApp (também serve de backup)">Compartilhar com a equipe</button>
       <button class="btn" id="ops-restaurar" title="Junta o arquivo recebido no WhatsApp com as operações deste computador">Receber atualização</button>
+      <label class="eq-chave" title="O arquivo leva a chave da API para a leitura por foto funcionar nos aparelhos da equipe sem digitar nada"><input type="checkbox" id="eq-enviar-chave"> Enviar a chave da API junto (só para o grupo da equipe)</label>
       <input type="file" id="ops-arq" accept=".json,application/json" hidden>
     </div>
     <div id="eq-status"></div>
@@ -1011,11 +1014,18 @@ function exportarCSV(){
 /* ===== Compartilhar com a equipe e receber atualização =====
    O arquivo leva TODAS as operações (inclusive as excluídas, para a exclusão se espalhar).
    Ao receber, junta com as deste computador: operação nova entra; pagamento e exclusão valem pela alteração mais recente. */
+/* Chave da API da Anthropic (leitura por foto): guardada só no navegador; pode viajar no arquivo da equipe, nunca no código publicado */
+function chaveApiLocal(){ try { return localStorage.getItem('calcCheques.apiKey') || ''; } catch(e){ return ''; } }
+function gravarChaveApi(k){ try { localStorage.setItem('calcCheques.apiKey', k); } catch(e){} const el = document.getElementById('foto-chave'); if (el) el.value = k; }
+const chaveValida = k => typeof k === 'string' && /^sk-ant-[A-Za-z0-9_-]{20,}$/.test(k.trim());
+const enviarChave = () => $('#eq-enviar-chave').checked && chaveValida(chaveApiLocal());
 function pacoteEquipe(){
-  return {app:'calculadora-cheques', versao:2, versaoCalc:VERSAO_CALC, exportadoEm:agora(), enviadoPor:usuario(), operacoes:carregarOps()};
+  const pac = {app:'calculadora-cheques', versao:2, versaoCalc:VERSAO_CALC, exportadoEm:agora(), enviadoPor:usuario(), operacoes:carregarOps()};
+  if (enviarChave()) pac.chaveApi = chaveApiLocal().trim();
+  return pac;
 }
 async function fazerBackup(){
-  const ops = carregarOps(); if (!ops.length){ alert('Não há operações aceitas para compartilhar.'); return; }
+  const ops = carregarOps(); if (!ops.length && !enviarChave()){ alert('Não há operações aceitas para compartilhar.'); return; }
   const quando = new Date(), dd = n => String(n).padStart(2,'0');
   const nome = `2RPL-operacoes-${dd(quando.getDate())}-${dd(quando.getMonth()+1)}-${quando.getFullYear()}-${dd(quando.getHours())}h${dd(quando.getMinutes())}.json`;
   const conteudo = JSON.stringify(pacoteEquipe(), null, 1);
@@ -1065,6 +1075,8 @@ async function restaurarBackup(arq){
   const recebidas = Array.isArray(dados) ? dados : dados?.operacoes;
   if (!Array.isArray(recebidas)){ statusEquipe('erro', 'Este arquivo não é uma atualização da calculadora.'); return; }
   const r = mesclarOps(carregarOps(), recebidas);
+  let chave = '';
+  if (chaveValida(dados.chaveApi) && dados.chaveApi.trim() !== chaveApiLocal().trim()){ chave = chaveApiLocal() ? 'atualizada' : 'recebida'; gravarChaveApi(dados.chaveApi.trim()); }
   try { salvarOps(r.ops); } catch(e){ statusEquipe('erro', 'Não foi possível guardar neste navegador.'); return; }
   atualizarContOps(); renderOps();
   const quando = dados.exportadoEm ? new Date(dados.exportadoEm).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '';
@@ -1072,6 +1084,7 @@ async function restaurarBackup(arq){
   if (r.novas.length) itens.push(`${plural(r.novas.length,'operação nova','operações novas')}: ${r.novas.map(esc).join(', ')}`);
   if (r.pagamentos) itens.push(`${plural(r.pagamentos,'pagamento atualizado','pagamentos atualizados')}`);
   if (r.exclusoes.length) itens.push(`${plural(r.exclusoes.length,'operação excluída','operações excluídas')}: ${r.exclusoes.map(esc).join(', ')}`);
+  if (chave) itens.push(`Chave da API ${chave}: a leitura por foto já funciona neste aparelho`);
   if (r.renomeadas.length) itens.push(`Nome repetido entre computadores, renumerado: ${r.renomeadas.map(esc).join('; ')}`);
   const aviso = dados.versaoCalc && dados.versaoCalc > VERSAO_CALC ? '<div style="margin-top:6px;color:var(--neg)">⚠ Quem enviou usa uma versão mais nova da calculadora. Peça o arquivo atualizado da calculadora.</div>' : '';
   statusEquipe('ok', `<b>Atualização recebida</b>${dados.enviadoPor?` de ${esc(dados.enviadoPor)}`:''}${quando?` (${quando})`:''}.` +
@@ -1099,6 +1112,8 @@ async function restaurarBackup(arq){
   aba.addEventListener('dragleave', e => { if (!aba.contains(e.relatedTarget)) aba.classList.remove('sobre'); });
   aba.addEventListener('drop', e => { e.preventDefault(); aba.classList.remove('sobre'); const f = e.dataTransfer.files[0]; if (f) restaurarBackup(f); });
   definirUsuario(usuario()); marcarPendente(temPendente());
+  try { $('#eq-enviar-chave').checked = localStorage.getItem('calcCheques.enviarChave') !== '0'; } catch(e){ $('#eq-enviar-chave').checked = true; }
+  $('#eq-enviar-chave').onchange = () => { try { localStorage.setItem('calcCheques.enviarChave', $('#eq-enviar-chave').checked ? '1' : '0'); } catch(e){} };
   if (!usuario()) pedirUsuario();
   atualizarContOps();
 })();
