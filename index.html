@@ -1,0 +1,1372 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Desconto de Cheques</title>
+<meta name="theme-color" content="#4d6a61">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cheques 2RPL">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone-180.png">
+<style>
+:root{
+  /* Paleta: verde-sálvia (parede), mogno (madeira), caramelo (couro) e latão */
+  --bg:#f3eee6; --card:#fffdf9; --card2:#f8f3ea; --tx:#2b2620; --mut:#776b5d; --bd:#e7ddcf; --bd2:#d5c7b2;
+  --pri:#4d6a61; --pri-esc:#33473f; --pri2:#e4ece8; --pri-tx:#ffffff;
+  --mog:#7b3f22; --cara:#b5844f; --cara2:#f3e6d4; --latao:#c9a66b;
+  --ok:#3d6b55; --neg:#a3361f; --neg-bg:#fbeae4; --sombra:0 1px 2px rgba(60,40,20,.06),0 6px 18px rgba(60,40,20,.06);
+  --c-juros:#8b4a2b; --c-iof:#c49a6c; --c-outros:#a89c8c; --c-liq:#7fa695;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#171b18; --card:#20261f; --card2:#1b201b; --tx:#ece6dc; --mut:#a59a8a; --bd:#323a32; --bd2:#43503f;
+    --pri:#86a99b; --pri-esc:#2c3d35; --pri2:#263630; --pri-tx:#14201a;
+    --mog:#d08a62; --cara:#c9a273; --cara2:#3a2e20; --latao:#d4b47a;
+    --ok:#9cc7b2; --neg:#f0a08a; --neg-bg:#3a201a; --sombra:none; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums}
+
+/* ---------- topo ---------- */
+.topo{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 85%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--bd)}
+.topo-in{max-width:1240px;margin:auto;padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.marca{display:flex;align-items:center;gap:10px;margin-right:auto}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--mog),#5a2c17);color:#f6e7d2;display:grid;place-items:center}
+.marca b{font-size:16px;display:block;line-height:1.2}
+.marca small{color:var(--mut);font-size:12px}
+.abas{display:flex;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:3px;gap:2px}
+.abas button{border:0;background:none;color:var(--mut);font:inherit;font-weight:500;padding:6px 14px;border-radius:7px;cursor:pointer}
+.abas button.ativo{background:var(--pri);color:var(--pri-tx);box-shadow:inset 0 -2px 0 var(--latao)}
+
+/* ---------- estrutura ---------- */
+main{max-width:1240px;margin:auto;padding:20px 24px 48px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;align-items:start}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:18px 20px;margin-bottom:16px;box-shadow:var(--sombra)}
+.card-tit{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.card-tit h2{font-size:15px;margin:0}
+.card-tit .ac{margin-left:auto}
+.passo{width:22px;height:22px;border-radius:50%;background:var(--cara2);color:var(--mog);font-size:12px;font-weight:700;display:grid;place-items:center;flex:none}
+.oculto{display:none!important}
+
+/* ---------- campos ---------- */
+.campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px 14px}
+.f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.f>span{font-size:12px;font-weight:500;color:var(--mut)}
+.f small{font-size:11px;color:var(--mut)}
+.inp{display:flex;align-items:center;background:var(--card);border:1px solid var(--bd2);border-radius:9px;transition:border-color .15s,box-shadow .15s}
+.inp:focus-within{border-color:var(--pri);box-shadow:0 0 0 3px color-mix(in srgb,var(--pri) 18%,transparent)}
+.inp i{font-style:normal;color:var(--mut);font-size:12px;padding:0 10px;white-space:nowrap}
+.inp i:first-child{padding-right:0}
+.inp input{flex:1;min-width:0;border:0;background:none;color:var(--tx);font:inherit;padding:8px 10px;outline:none}
+.inp input.dir{text-align:right}
+.inp.grande input{font-size:16px;font-weight:600}
+details.mais{margin-top:14px;border-top:1px dashed var(--bd);padding-top:12px}
+details.mais summary{cursor:pointer;color:var(--mut);font-size:13px;list-style:none;display:flex;align-items:center;gap:6px}
+details.mais summary::-webkit-details-marker{display:none}
+details.mais summary::marker{content:""}
+details.mais summary .seta{transform:rotate(-90deg);transition:transform .15s;flex:none}
+details.mais[open] summary .seta{transform:none}
+details.mais .campos{margin-top:12px}
+
+/* ---------- botões ---------- */
+.btn{font:inherit;font-weight:500;border:1px solid var(--bd2);background:var(--card);color:var(--tx);border-radius:9px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--pri)}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:var(--pri-tx)}
+.btn.lev{border-color:transparent;background:none;color:var(--mut)}
+.btn.lev:hover{color:var(--tx);background:var(--card2)}
+.btn.add{width:100%;justify-content:center;border-style:dashed;border-color:var(--cara);color:var(--mog);background:none;padding:12px}
+.btn.add:hover{background:var(--cara2)}
+.ic{border:0;background:none;color:var(--mut);cursor:pointer;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:15px}
+.ic:hover{background:var(--card2);color:var(--tx)}
+.ic.rm:hover{color:var(--neg);background:var(--neg-bg)}
+
+/* ---------- lista de cheques ---------- */
+.lista{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.chq{border:1px solid var(--bd);border-radius:12px;background:var(--card2);overflow:hidden}
+.chq.alerta{border-color:var(--neg)}
+.chq-main{display:grid;grid-template-columns:28px 140px 140px 62px minmax(78px,1fr) minmax(64px,.8fr) minmax(96px,1.2fr) 64px;gap:10px;align-items:end;padding:12px 12px 12px 14px}
+.chq-n{width:24px;height:24px;border-radius:7px;background:var(--cara2);color:var(--mog);font-size:12px;font-weight:700;display:grid;place-items:center;align-self:center}
+.out{display:flex;flex-direction:column;gap:4px;min-width:0;padding-bottom:7px}
+.out span{font-size:11px;color:var(--mut);font-weight:500}
+.out b{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.out.liq b{color:var(--ok);font-size:15px}
+.chq.alerta .out.prazo b{color:var(--neg)}
+.acts{display:flex;gap:2px;justify-content:flex-end;align-self:center}
+.acts .tg .seta{transition:transform .15s}
+.chq.aberto .acts .tg .seta{transform:rotate(180deg)}
+.chq-det{display:none;border-top:1px solid var(--bd);padding:12px 14px 14px;background:var(--card)}
+.chq.aberto .chq-det{display:block}
+.chq-det .campos{grid-template-columns:2fr 1.4fr .8fr .9fr 1.1fr 1fr}
+.chq-det .extra{display:flex;gap:18px;margin-top:10px;font-size:12px;color:var(--mut)}
+.chq-alerta{background:var(--neg-bg);color:var(--neg);font-size:12px;padding:6px 14px}
+.vazio{text-align:center;color:var(--mut);padding:8px 0 0;font-size:13px}
+
+/* ---------- avisos ---------- */
+.aviso{display:flex;gap:10px;align-items:flex-start;color:var(--neg);background:var(--neg-bg);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+
+/* ---------- resumo lateral ---------- */
+aside{position:sticky;top:76px}
+.res{padding:0;overflow:hidden}
+.res-topo{padding:20px;background:linear-gradient(150deg,var(--pri) 0%,var(--pri-esc) 100%);color:#fff;border-bottom:3px solid var(--latao)}
+@media (prefers-color-scheme: dark){.res-topo{background:linear-gradient(150deg,#3f5a50,#22312a)}}
+.res-topo span{font-size:12px;opacity:.85;font-weight:500}
+.res-topo .grande{font-size:30px;font-weight:700;letter-spacing:-.5px;line-height:1.15;margin:4px 0 2px}
+.res-topo small{opacity:.85;font-size:12px}
+.barra{display:flex;height:8px;border-radius:99px;overflow:hidden;margin:14px 0 0;background:rgba(255,255,255,.2)}
+.barra div{height:100%}
+.res-corpo{padding:16px 20px 18px}
+.linha{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+.linha .rot{display:flex;align-items:center;gap:8px;color:var(--mut)}
+.bol{width:8px;height:8px;border-radius:50%}
+.linha.tot{border-top:1px solid var(--bd);margin-top:6px;padding-top:10px;font-weight:700;font-size:14px}
+.linha.tot .rot{color:var(--tx)}
+.kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px}
+.kpi{background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:8px 10px}
+.kpi span{display:block;font-size:11px;color:var(--mut)}
+.kpi b{font-size:15px}
+.res-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px}
+.res-acts .btn{flex:1;justify-content:center;padding:8px 10px;font-size:13px}
+
+/* ---------- leitura por foto ---------- */
+.foto{border:1.5px dashed var(--cara);border-radius:12px;background:var(--cara2);padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:background .15s,border-color .15s}
+.foto:hover,.foto.sobre{border-color:var(--mog);background:color-mix(in srgb,var(--cara2) 70%,var(--cara))}
+.foto .ico{width:42px;height:42px;border-radius:10px;background:var(--mog);color:#f6e7d2;display:grid;place-items:center;flex:none}
+.foto b{display:block;color:var(--mog)}
+.foto small{color:var(--mut);font-size:12px}
+.foto .btn{flex:none}
+.foto #foto-colar,.foto #foto-camera{margin-left:auto}
+.foto #foto-camera + input + #foto-colar{margin-left:0}
+.so-toque{display:none}
+@media (pointer:coarse){ .so-toque{display:inline-flex} }
+.foto-cfg{margin:-6px 0 14px}
+.foto-cfg .campos{grid-template-columns:1fr auto;align-items:end}
+.foto-cfg p{font-size:12px;color:var(--mut);margin:8px 0 0}
+.foto-status{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.fst{display:flex;align-items:center;gap:10px;font-size:13px;border:1px solid var(--bd);border-radius:10px;padding:8px 10px;background:var(--card)}
+.fst img{width:44px;height:44px;object-fit:cover;border-radius:6px;flex:none}
+.fst .msg{flex:1;min-width:0}
+.fst .msg small{display:block;color:var(--mut)}
+.fst.erro{border-color:var(--neg);color:var(--neg);background:var(--neg-bg)}
+.fst.ok .msg b{color:var(--ok)}
+.gira{width:16px;height:16px;border:2px solid var(--bd2);border-top-color:var(--mog);border-radius:50%;animation:gira .8s linear infinite;flex:none}
+@keyframes gira{to{transform:rotate(360deg)}}
+.chq.dafoto{border-left:3px solid var(--cara)}
+.foto-info{margin-top:10px;font-size:12px;color:var(--mut);background:var(--card2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px}
+.foto-info b{color:var(--tx)}
+.foto-info .obs{color:var(--neg)}
+.selo{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;background:var(--cara2);color:var(--mog);margin-left:4px}
+.selo.baixa,.selo.media{background:var(--neg-bg);color:var(--neg)}
+
+/* ---------- operações aceitas ---------- */
+.btn.aceitar{width:100%;justify-content:center;margin-top:16px;padding:11px;font-size:15px;font-weight:600;background:var(--pri);border-color:var(--pri);color:var(--pri-tx)}
+.btn.aceitar:hover{background:var(--pri-esc)}
+.btn.aceitar:disabled{opacity:.45;cursor:not-allowed}
+.cont{display:inline-block;min-width:18px;padding:0 6px;border-radius:99px;background:var(--cara2);color:var(--mog);font-size:11px;font-weight:700;margin-left:4px}
+.abas button.ativo .cont{background:rgba(255,255,255,.25);color:inherit}
+.ops-barra{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.ops-barra .inp{flex:1;min-width:200px}
+.ops-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.ops-kpis div{background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:10px 12px}
+.ops-kpis span{display:block;font-size:11px;color:var(--mut)}
+.ops-kpis b{font-size:17px}
+.op{border:1px solid var(--bd);border-radius:12px;background:var(--card2);margin-bottom:10px;overflow:hidden}
+.op-main{display:grid;grid-template-columns:minmax(160px,1.6fr) repeat(4,minmax(80px,1fr)) auto;gap:12px;align-items:center;padding:12px 14px}
+.op-nome b{display:block;font-size:15px;color:var(--mog)}
+.op-nome small{color:var(--mut);font-size:12px}
+.op-det{display:none;border-top:1px solid var(--bd);background:var(--card);padding:12px 14px}
+.op.aberto .op-det{display:block}
+.op.aberto .tg .seta{transform:rotate(180deg)}
+.op-det .params{font-size:12px;color:var(--mut);margin-bottom:10px}
+.op-det .params b{color:var(--tx)}
+.tabela{width:100%;border-collapse:collapse;font-size:12.5px}
+.tabela th{text-align:left;font-weight:600;color:var(--mut);font-size:11px;border-bottom:1px solid var(--bd);padding:6px}
+.tabela td{border-bottom:1px solid var(--bd);padding:6px;white-space:nowrap}
+.tabela .n{text-align:right}
+.tabela tfoot td{font-weight:700;border-bottom:0}
+.op-det .rolar{overflow-x:auto}
+.op.quitada{border-left:3px solid var(--ok)}
+.op.atraso{border-left:3px solid var(--neg)}
+.selo-op{display:inline-block;font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px;background:var(--cara2);color:var(--mog)}
+.selo-op.quitada{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.selo-op.atraso{background:var(--neg-bg);color:var(--neg)}
+.op-chqs{border-top:1px solid var(--bd);background:var(--card)}
+.op-chq{display:grid;grid-template-columns:22px minmax(150px,1.6fr) 120px 120px minmax(170px,1.3fr);gap:12px;align-items:center;padding:9px 14px;border-bottom:1px dashed var(--bd);font-size:13px}
+.op-chq:last-child{border-bottom:0}
+.op-chq .pg{width:18px;height:18px;accent-color:var(--ok);cursor:pointer;margin:0}
+.op-chq .ident{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--mut)}
+.op-chq .ident b{color:var(--tx)}
+.op-chq .valor{text-align:right;font-weight:600}
+.op-chq.pago .valor,.op-chq.pago .ident,.op-chq.pago .num{color:var(--mut)}
+.st{font-size:12px;color:var(--mut)}
+.st.pago{color:var(--ok);font-weight:600}
+.st.venc{color:var(--neg);font-weight:700}
+.st.hoje{color:var(--mog);font-weight:700}
+.st .dpg{font:inherit;font-size:12px;border:1px solid var(--bd2);border-radius:6px;padding:2px 5px;background:var(--card);color:var(--tx);margin-left:4px}
+.ops-kpis .alerta b{color:var(--neg)}
+.ops-filtro{display:flex;gap:2px;background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:3px}
+.ops-filtro button{border:0;background:none;font:inherit;font-size:13px;font-weight:500;color:var(--mut);padding:6px 12px;border-radius:7px;cursor:pointer}
+.ops-filtro button.ativo{background:var(--pri);color:var(--pri-tx)}
+.op-det .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn.perigo{color:var(--neg);border-color:var(--neg)}
+.vazio-ops{text-align:center;color:var(--mut);padding:30px 10px}
+dialog{border:0;border-radius:16px;padding:0;max-width:520px;width:calc(100% - 32px);background:var(--card);color:var(--tx);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(30,25,20,.45)}
+.dlg-c{padding:20px 22px}
+.dlg-c h2{margin:0 0 4px;font-size:18px}
+.dlg-c .final{font-size:13px;color:var(--mut);margin:6px 0 14px}
+.dlg-c .final b{color:var(--mog)}
+.dlg-c .linhas{background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:6px 12px;margin-bottom:12px}
+.dlg-acts{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+.ok-msg{display:flex;gap:10px;align-items:center;color:var(--ok);font-weight:600;margin-bottom:6px}
+@media (max-width:760px){
+  .op-main{grid-template-columns:1fr 1fr}
+  .op-main .op-nome{grid-column:1 / -1}
+  .op-chq{grid-template-columns:22px 1fr auto;row-gap:4px}
+  .op-chq .ident{grid-column:2 / -1}
+  .op-chq>div:nth-child(3){grid-column:2;white-space:nowrap}
+  .op-chq .valor{grid-column:3;white-space:nowrap}
+  .op-chq .st{grid-column:2 / -1}
+}
+@media print{ dialog{display:none} .op-det{display:block!important} .ops-barra{display:none} }
+
+/* ---------- equipe ---------- */
+.equipe{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--card2);border:1px solid var(--bd);border-radius:12px;padding:10px 12px;margin-bottom:14px}
+.eq-quem{font-size:13px;color:var(--mut);margin-right:auto}
+.eq-quem b{color:var(--tx)}
+.eq-pend{font-size:12px;font-weight:600;color:var(--neg);flex-basis:100%;order:3}
+.eq-res{border:1px solid var(--bd);border-left:3px solid var(--ok);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:13px;background:var(--card)}
+.eq-res.erro{border-left-color:var(--neg);color:var(--neg)}
+.eq-res ul{margin:6px 0 0;padding-left:18px}
+#aba-operacoes.sobre .card{outline:2px dashed var(--ok);outline-offset:4px}
+.quem{font-size:11px;color:var(--mut);margin-left:4px}
+
+.usuarios{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.usuarios .btn{justify-content:center;padding:14px;font-size:15px;font-weight:600}
+.usuarios .btn.ativo{background:var(--pri);border-color:var(--pri);color:var(--pri-tx)}
+.inp select{flex:1;min-width:0;border:0;background:none;color:var(--tx);font:inherit;padding:8px 10px;outline:none}
+
+.ver-info{margin-top:10px;font-size:12px;padding:5px 10px}
+.ver-info .n-av{color:var(--neg);font-weight:700;margin-left:6px}
+.info-extra{display:none}
+.chq.info-aberta .info-extra{display:block}
+@media print{ .ver-info{display:none!important} .info-extra{display:block!important} }
+
+/* ---------- celular ---------- */
+.so-toque-txt{display:none}
+@media (pointer:coarse){ .so-mouse{display:none!important} .so-toque-txt{display:block} }
+.barra-movel{display:none}
+@media (max-width:1020px){
+  body.aba-desconto .barra-movel{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:6;align-items:center;gap:12px;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:var(--pri-esc);color:#fff;box-shadow:0 -4px 16px rgba(0,0,0,.15)}
+  .barra-movel>div{flex:1;min-width:0;display:flex;flex-direction:column}
+  .barra-movel span,.barra-movel small{font-size:11px;opacity:.85}
+  .barra-movel b{font-size:20px;line-height:1.2}
+  .barra-movel .btn{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.35);color:#fff}
+  body.aba-desconto main{padding-bottom:96px}
+}
+@media (max-width:760px){
+  .foto{flex-wrap:wrap;gap:10px 12px}
+  .foto .foto-txt{flex:1 1 calc(100% - 60px)}
+  .foto #foto-camera,.foto #foto-colar{flex:1 1 0;margin-left:0;justify-content:center}
+  .foto #foto-cfg-btn{flex:0 0 auto}
+  .op-main .out b{white-space:normal}
+}
+@media print{ .barra-movel{display:none!important} }
+
+/* ---------- mensagem WhatsApp ---------- */
+.btn.zap{width:100%;justify-content:center;margin-top:8px;padding:10px;font-weight:600;color:#1f7a4a;border-color:#1f7a4a}
+.btn.zap:hover{background:#e8f5ee}
+.btn.zap:disabled{opacity:.45;cursor:not-allowed}
+.btn.zap-env{background:#1f7a4a;border-color:#1f7a4a;color:#fff}
+@media (prefers-color-scheme: dark){ .btn.zap{color:#6fd39e;border-color:#6fd39e} .btn.zap:hover{background:#163325} }
+#dlg-zap{max-width:620px}
+#zap-texto{width:100%;min-height:340px;resize:vertical;border:1px solid var(--bd2);border-radius:10px;padding:12px;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--card2);color:var(--tx)}
+#zap-texto:focus{outline:2px solid var(--pri);outline-offset:-1px}
+.zap-campos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.zap-modelo{display:flex;gap:4px;background:var(--card2);border:1px solid var(--bd);border-radius:10px;padding:3px;margin-top:12px}
+.zap-modelo button{flex:1;border:0;background:none;font:inherit;font-size:13px;font-weight:500;color:var(--mut);padding:7px 10px;border-radius:7px;cursor:pointer}
+.zap-modelo button.ativo{background:#1f7a4a;color:#fff}
+.zap-ok{font-size:12px;color:var(--ok);margin-right:auto;align-self:center}
+@media (max-width:600px){ .zap-campos{grid-template-columns:1fr} }
+
+/* ---------- fórmulas ---------- */
+.formulas h3{font-size:14px;margin:18px 0 6px}
+.formulas li{margin:4px 0}
+.formulas code{background:var(--card2);border:1px solid var(--bd);border-radius:6px;padding:1px 6px;font-size:12.5px}
+.mut{color:var(--mut)}
+
+/* ---------- responsivo ---------- */
+@media (max-width:1020px){
+  .layout{grid-template-columns:1fr}
+  aside{position:static}
+}
+@media (max-width:760px){
+  .topo-in,main{padding-left:16px;padding-right:16px}
+  .topo{position:static}
+  .abas{width:100%} .abas button{flex:1;padding:6px 8px}
+  .desc .chq-main{grid-template-columns:1fr 1fr;grid-template-areas:"n acts" "venc valor" "prazo juros" "iof liq";row-gap:10px}
+  .desc .chq-n{grid-area:n} .desc .acts{grid-area:acts} .desc .venc{grid-area:venc} .desc .valor{grid-area:valor}
+  .desc .prazo{grid-area:prazo} .desc .juros{grid-area:juros} .desc .iof{grid-area:iof} .desc .liq{grid-area:liq}
+  .chq-main .out{padding-bottom:0}
+  .chq-det .campos{grid-template-columns:1fr 1fr}
+  .chq-det .campos .f:first-child{grid-column:1 / -1}
+}
+
+/* ---------- impressão ---------- */
+@media print{
+  .topo,.btn,.ic,.res-acts,.no-print{display:none!important}
+  body{background:#fff;color:#000} main{padding:0}
+  .layout{grid-template-columns:1fr} aside{position:static}
+  .card{box-shadow:none;border-color:#ccc;break-inside:avoid}
+  .chq-det{display:block!important}
+  .res-topo{background:#fff!important;color:#000;border-bottom:1px solid #ccc}
+  details.mais{display:block} details.mais>*{display:block}
+}
+</style>
+</head>
+<body>
+<div class="topo">
+  <div class="topo-in">
+    <div class="marca">
+      <div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 14h4M14 10h4M14 14h4"/></svg></div>
+      <div><b>Desconto de Cheques</b><small>Cálculo de juros e valor líquido</small></div>
+    </div>
+    <nav class="abas">
+      <button data-aba="desconto" class="ativo">Desconto</button>
+      <button data-aba="operacoes">Operações aceitas<span class="cont" id="n-ops">0</span></button>
+      <button data-aba="sobre">Fórmulas</button>
+    </nav>
+  </div>
+</div>
+
+<main>
+<!-- ================= DESCONTO ================= -->
+<section id="aba-desconto" class="layout">
+  <div>
+    <div class="card">
+      <div class="card-tit"><span class="passo">1</span><h2>Condições da operação</h2></div>
+      <div class="campos">
+        <label class="f"><span>Data de aceite</span><div class="inp"><input type="date" id="p-aceite"></div></label>
+        <label class="f"><span>Taxa de juros</span><div class="inp"><input id="p-taxa" class="dir" inputmode="decimal"><i>% a.m.</i></div><small>Padrão: 4% ao mês</small></label>
+        <label class="f"><span>Floating</span><div class="inp"><input id="p-floating" class="dir" inputmode="numeric"><i>dias</i></div><small>Padrão: 2 dias</small></label>
+      </div>
+      <details class="mais" id="mais-encargos">
+        <summary><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Outros encargos <span id="resumo-encargos" class="mut"></span></summary>
+        <div class="campos">
+          <label class="f"><span>Ad valorem</span><div class="inp"><input id="p-adval" class="dir" inputmode="decimal"><i>%</i></div></label>
+          <label class="f"><span>Tarifa por título</span><div class="inp"><i>R$</i><input id="p-tarifa" class="dir" inputmode="decimal"></div></label>
+          <label class="f"><span>IOF adicional</span><div class="inp"><input id="p-iof" class="dir" inputmode="decimal"><i>%</i></div></label>
+        </div>
+        <p class="mut" style="font-size:12px;margin:10px 0 0">O IOF diário é fixo em 0,0082% ao dia sobre (valor − juros), contado em dias pelo DIAS360, como na planilha.</p>
+      </details>
+      <details class="mais">
+        <summary><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>Cliente <span id="resumo-cliente" class="mut"></span></summary>
+        <div class="campos">
+          <label class="f"><span>Nome</span><div class="inp"><input id="c-nome"></div></label>
+          <label class="f"><span>CPF/CNPJ</span><div class="inp"><input id="c-doc"></div></label>
+          <label class="f"><span>Telefone</span><div class="inp"><input id="c-tel" inputmode="tel"></div></label>
+          <label class="f"><span>Endereço</span><div class="inp"><input id="c-end"></div></label>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="card-tit"><span class="passo">2</span><h2>Cheques</h2>
+        <span class="ac mut so-mouse" style="font-size:12px">Enter no valor adiciona outro cheque</span></div>
+      <div class="foto" id="foto-zona" tabindex="0" role="button" aria-label="Ler cheques por foto">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
+        <div class="foto-txt"><b>Ler cheques por foto</b><small class="so-mouse">Arraste as fotos aqui, clique para escolher ou use “Colar foto” (ou ⌘V). Pode haver vários cheques na mesma foto.</small><small class="so-toque-txt">Tire a foto ou toque aqui para escolher da galeria. Pode haver vários cheques na mesma foto.</small></div>
+        <button class="btn so-toque" id="foto-camera" title="Abre a câmera do celular">Tirar foto</button>
+        <input type="file" id="foto-cam" accept="image/*" capture="environment" hidden>
+        <button class="btn" id="foto-colar" title="Cola a foto copiada (⌘C) de Fotos, Finder, WhatsApp ou da web">Colar foto</button>
+        <button class="btn lev" id="foto-cfg-btn" title="Chave da API e privacidade">⚙</button>
+        <input type="file" id="foto-arq" accept="image/*" multiple hidden>
+      </div>
+      <details class="mais foto-cfg" id="foto-cfg">
+        <summary class="oculto"></summary>
+        <div class="campos">
+          <label class="f"><span>Chave da API da Anthropic</span><div class="inp"><input type="password" id="foto-chave" placeholder="sk-ant-..." autocomplete="off" spellcheck="false"></div></label>
+          <button class="btn lev" id="foto-esquecer">Esquecer chave</button>
+        </div>
+        <p>A leitura usa a IA Claude (modelo Claude Opus 5.5). Cada foto é enviada à Anthropic pela internet. O custo é de alguns centavos de dólar por foto, cobrados na sua conta da API (console.anthropic.com). A chave fica guardada só neste navegador. Confira sempre os dados lidos antes de usar o cálculo.</p>
+      </details>
+      <div class="foto-status" id="foto-status"></div>
+      <div id="aviso-desc"></div>
+      <div class="lista desc" id="lista-desc"></div>
+      <button class="btn add" id="add-desc">+ Adicionar cheque</button>
+    </div>
+  </div>
+
+  <aside>
+    <div class="card res">
+      <div class="res-topo">
+        <span>Valor líquido a pagar ao cliente</span>
+        <div class="grande num" id="r-liquido">R$ 0,00</div>
+        <small id="r-sub">Informe vencimento e valor dos cheques</small>
+        <div class="barra" id="r-barra"></div>
+      </div>
+      <div class="res-corpo"><div id="resumo-desc"></div>
+        <button class="btn aceitar" id="aceitar-op" disabled>✓ Aceitar operação</button>
+        <button class="btn zap" id="zap-op" disabled><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg> Mensagem para o cliente</button>
+        <div class="res-acts">
+          <button class="btn" onclick="window.print()">Imprimir</button>
+          <button class="btn" id="ex-desc">Exemplo</button>
+          <button class="btn lev" id="limpa-desc">Limpar</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+</section>
+
+<div class="barra-movel" id="barra-movel">
+  <div><span>Líquido a pagar</span><b class="num" id="bm-liquido">R$ 0,00</b><small id="bm-sub"></small></div>
+  <button class="btn" id="bm-resumo">Ver resumo</button>
+</div>
+
+<!-- ================= OPERAÇÕES ACEITAS ================= -->
+<section id="aba-operacoes" class="oculto">
+  <div class="card">
+    <div class="card-tit"><span class="passo">✓</span><h2>Operações aceitas</h2></div>
+    <div class="ops-barra">
+      <div class="ops-filtro" id="ops-filtro"><button data-f="todas" class="ativo">Todas</button><button data-f="abertas">Em aberto</button><button data-f="quitadas">Quitadas</button></div>
+      <div class="inp"><input id="ops-busca" placeholder="Buscar por nome, emitente ou nº do cheque…" autocomplete="off"></div>
+      <button class="btn" id="ops-csv" title="Planilha com um cheque por linha, para abrir no Excel">Exportar para Excel</button>
+    </div>
+    <div class="equipe">
+      <div class="eq-quem">Você: <b id="eq-nome">—</b> <button class="btn lev" id="eq-trocar">alterar</button></div>
+      <div class="eq-pend oculto" id="eq-pend">⚠ Há alterações suas que a equipe ainda não recebeu.</div>
+      <button class="btn zap-env" id="ops-backup" title="Gera o arquivo com todas as operações para enviar no grupo do WhatsApp (também serve de backup)">Compartilhar com a equipe</button>
+      <button class="btn" id="ops-restaurar" title="Junta o arquivo recebido no WhatsApp com as operações deste computador">Receber atualização</button>
+      <input type="file" id="ops-arq" accept=".json,application/json" hidden>
+    </div>
+    <div id="eq-status"></div>
+    <div class="ops-kpis" id="ops-kpis"></div>
+    <div id="ops-lista"></div>
+    <p class="mut" style="font-size:12px;margin:12px 0 0">As operações ficam guardadas neste navegador, neste computador. Para a equipe ficar igual, quem aceitar, marcar pagamento ou excluir clica em “Compartilhar com a equipe” e envia o arquivo no grupo do WhatsApp; os demais clicam em “Receber atualização” (ou arrastam o arquivo para esta aba). O mesmo arquivo serve de backup: guarde o mais recente.</p>
+  </div>
+</section>
+
+<dialog id="dlg-usuario">
+  <div class="dlg-c">
+    <h2>Quem está usando este computador?</h2>
+    <p class="mut" style="margin:0 0 14px;font-size:13px">O nome fica registrado nas operações que você aceitar, nos pagamentos que marcar e nas exclusões. Você pode trocar depois em Operações aceitas › alterar.</p>
+    <div class="usuarios" id="lista-usuarios"></div>
+  </div>
+</dialog>
+
+<dialog id="dlg-aceitar">
+  <div class="dlg-c" id="dlg-form">
+    <h2>Aceitar operação</h2>
+    <p class="mut" style="margin:0 0 14px;font-size:13px">A operação será guardada em “Operações aceitas” com os valores calculados agora.</p>
+    <label class="f"><span>Nome da operação</span><div class="inp"><input id="ac-nome" autocomplete="off"></div></label>
+    <div class="final" id="ac-final"></div>
+    <div class="linhas" id="ac-resumo"></div>
+    <label class="f" style="margin-bottom:12px"><span>Aceita por</span><div class="inp"><select id="ac-usuario"></select></div><small>Fica registrado na operação.</small></label>
+    <div id="ac-avisos"></div>
+    <div class="dlg-acts">
+      <button class="btn lev" id="ac-cancelar">Cancelar</button>
+      <button class="btn pri" id="ac-confirmar">✓ Aceitar e guardar</button>
+    </div>
+  </div>
+  <div class="dlg-c oculto" id="dlg-ok">
+    <div class="ok-msg"><span style="font-size:22px">✓</span><span id="ok-texto"></span></div>
+    <p class="mut" style="font-size:13px;margin:0">Envie a atualização no grupo do WhatsApp para a equipe receber esta operação. Depois, comece outra operação ou continue com esta na tela.</p>
+    <div class="dlg-acts">
+      <button class="btn lev" id="ok-fechar">Continuar com esta</button>
+      <button class="btn" id="ok-ver">Ver operações aceitas</button>
+      <button class="btn zap-env" id="ok-compartilhar">Compartilhar com a equipe</button>
+      <button class="btn pri" id="ok-nova">Nova operação</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="dlg-zap">
+  <div class="dlg-c">
+    <h2>Mensagem para o cliente</h2>
+    <p class="mut" style="margin:0;font-size:13px">Confira e ajuste o texto. Os *asteriscos* viram negrito no WhatsApp.</p>
+    <div class="zap-modelo" id="zap-modelo">
+      <button data-modelo="padrao" class="ativo">Padrão</button>
+      <button data-modelo="renatin">Mensagem WhatsApp estilo Renatin</button>
+    </div>
+    <div class="zap-campos">
+      <label class="f"><span>Nome do cliente</span><div class="inp"><input id="zap-nome" placeholder="Ex.: João da Silva" autocomplete="off"></div><small>A mensagem usa o primeiro nome.</small></label>
+      <label class="f"><span>WhatsApp do cliente</span><div class="inp"><input id="zap-tel" inputmode="tel" placeholder="(21) 99999-9999"></div><small>Em branco: você escolhe o contato no WhatsApp.</small></label>
+      <label class="f" style="grid-column:1 / -1"><span>Assinatura</span><div class="inp"><input id="zap-assin" placeholder="Seu nome ou empresa"></div><small>Fica guardada para as próximas mensagens.</small></label>
+    </div>
+    <textarea id="zap-texto" spellcheck="false"></textarea>
+    <div class="dlg-acts">
+      <span class="zap-ok" id="zap-ok"></span>
+      <button class="btn lev" id="zap-fechar">Fechar</button>
+      <button class="btn" id="zap-copiar">Copiar texto</button>
+      <button class="btn zap-env" id="zap-abrir"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg> Abrir no WhatsApp</button>
+    </div>
+  </div>
+</dialog>
+
+<section id="aba-sobre" class="oculto">
+  <div class="card formulas" style="max-width:820px">
+    <div class="card-tit"><h2>Como os valores são calculados</h2></div>
+    <p class="mut">Fórmulas iguais às da planilha <i>DESCONTO DE TÍTULOS - MODELO.xlsx</i>.</p>
+    <h3>Desconto (compra de cheques)</h3>
+    <ul>
+      <li><b>Prazo</b> = <code>DIAS360(aceite; vencimento; método europeu) + floating</code></li>
+      <li><b>Juros</b> = <code>valor × taxa ÷ 30 × prazo</code> (juros simples, descontados do valor de face)</li>
+      <li><b>Ad valorem</b> = <code>valor × ad valorem %</code></li>
+      <li><b>Tarifa</b> = tarifa por título</li>
+      <li><b>IOF</b> = <code>(valor − juros) × IOF adicional % + (valor − juros) × 0,0082% × (prazo − floating)</code></li>
+      <li><b>Líquido (desembolso)</b> = <code>valor − juros − ad valorem − tarifa − IOF</code></li>
+    </ul>
+    <h3>Diferenças em relação à planilha</h3>
+    <ul>
+      <li>O total de tarifas soma todos os cheques. Na planilha, a célula K15 somava só o primeiro.</li>
+      <li>Vencimento anterior ao aceite (prazo negativo): calcula como no Excel, mas destaca o cheque e mostra um aviso.</li>
+      <li>Os valores são calculados sem arredondamento, como no Excel, e exibidos com 2 casas.</li>
+      <li>Padrões: juros de 4% ao mês e floating de 2 dias.</li>
+    </ul>
+    <p class="mut">Os dados ficam neste navegador e só saem dele quando você compartilha o arquivo com a equipe ou lê uma foto pela IA. Versão da calculadora: <b id="versao-calc"></b>.</p>
+  </div>
+</section>
+</main>
+
+<script id="motor">
+/* ===== Motor de cálculo (funções puras, testadas em testes/run_tests.py) ===== */
+const IOF_DIARIO = 0.000082; // 0,0082% ao dia, fixo como na planilha
+
+// Data ISO 'aaaa-mm-dd' -> {a,m,d}
+function partes(iso){ const [a,m,d] = iso.split('-').map(Number); return {a,m,d}; }
+// Dias corridos entre duas datas ISO (fim − início)
+function diasCorridos(ini, fim){
+  const p=partes(ini), q=partes(fim);
+  return Math.round((Date.UTC(q.a,q.m-1,q.d) - Date.UTC(p.a,p.m-1,p.d)) / 86400000);
+}
+// DIAS360 do Excel, método europeu (TRUE): dia 31 vira 30 nas duas datas
+function dias360Europeu(ini, fim){
+  const p=partes(ini), q=partes(fim);
+  const d1 = Math.min(p.d,30), d2 = Math.min(q.d,30);
+  return (q.a-p.a)*360 + (q.m-p.m)*30 + (d2-d1);
+}
+
+/* params: {aceite (ISO), taxa, adval, tarifa, floating, iof} — taxas em fração (10% = 0.10)
+   cheques: [{venc (ISO), valor}] */
+function calcDesconto(params, cheques){
+  const linhas = cheques.map(c => {
+    const prazo = dias360Europeu(params.aceite, c.venc) + params.floating;
+    const juros = c.valor * params.taxa / 30 * prazo;
+    const adval = c.valor * params.adval;
+    const tarifa = params.tarifa;
+    const base = c.valor - juros;
+    const iof = base * params.iof + base * IOF_DIARIO * (prazo - params.floating);
+    const desembolso = c.valor - juros - adval - tarifa - iof;
+    return {prazo, juros, adval, tarifa, iof, desembolso, alerta: prazo - params.floating < 0};
+  });
+  const soma = k => linhas.reduce((s,l)=>s+l[k],0);
+  const total = {
+    valor: cheques.reduce((s,c)=>s+c.valor,0),
+    juros: soma('juros'), adval: soma('adval'), tarifa: soma('tarifa'),
+    iof: soma('iof'), desembolso: soma('desembolso'),
+  };
+  return {linhas, total};
+}
+
+
+</script>
+
+<script>
+/* ===== Interface ===== */
+const $ = s => document.querySelector(s);
+const CHAVE = 'calcCheques.v1';
+const brl = v => isFinite(v) ? v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
+const rs = v => 'R$ ' + brl(v);
+// Aceita "1.234,56", "1234,56", "1234.56" e "4.950" (ponto como milhar)
+const num = s => { s = String(s ?? '').trim().replace(/^R\$\s*/,''); if(!s) return 0;
+  if (s.includes(',')) s = s.replace(/\./g,'').replace(',','.');
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g,'');
+  const v = parseFloat(s); return isFinite(v) ? v : 0; };
+const pct = s => num(s) / 100;
+const fmtNum = (v,c=2) => v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:c});
+const fmtData = iso => iso ? iso.split('-').reverse().join('/') : '';
+const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+
+// Padrões da operação (pedido do usuário, 18/11/2026): juros de 4% ao mês e floating de 2 dias
+const TAXA_PADRAO = '4', FLOATING_PADRAO = '2';
+let estado = carregar() || novoEstado();
+if (!estado.versao || estado.versao < 2){ // dados salvos antes dos padrões: aplica 4% e 2 dias
+  estado.params.taxa = TAXA_PADRAO; estado.params.floating = FLOATING_PADRAO; estado.versao = 2;
+}
+function novoEstado(){
+  return { versao:2, cliente:{nome:'',doc:'',tel:'',end:''},
+    params:{aceite:hoje(), taxa:TAXA_PADRAO, adval:'0', tarifa:'0', floating:FLOATING_PADRAO, iof:'0'},
+    cheques:[chequeVazio()] };
+}
+function hoje(){ const d=new Date(); return new Date(d-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function chequeVazio(){ return {venc:'',sacador:'',doc:'',banco:'',agencia:'',conta:'',numero:'',valor:''}; }
+function carregar(){ try{ return JSON.parse(localStorage.getItem(CHAVE)); }catch(e){ return null; } }
+function salvar(){ try{ localStorage.setItem(CHAVE, JSON.stringify(estado)); }catch(e){} }
+
+/* ---- abas ---- */
+document.querySelectorAll('.abas button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.abas button').forEach(x=>x.classList.toggle('ativo', x===b));
+  ['desconto','operacoes','sobre'].forEach(a => $('#aba-'+a).classList.toggle('oculto', a!==b.dataset.aba));
+  document.body.classList.toggle('aba-desconto', b.dataset.aba === 'desconto');
+  if (b.dataset.aba === 'operacoes') renderOps();
+});
+
+/* formata valores em reais ao sair do campo */
+function formatarAoSair(el){
+  el.addEventListener('blur', () => { if (el.value.trim()){ el.value = brl(num(el.value)); el.dispatchEvent(new Event('input')); } });
+}
+
+/* ================= DESCONTO ================= */
+const CAMPOS_P = ['aceite','taxa','adval','tarifa','floating','iof'];
+const CAMPOS_C = ['nome','doc','tel','end'];
+function ligarCabecalho(){
+  CAMPOS_P.forEach(k => { const el=$('#p-'+k); el.value=estado.params[k]; el.oninput=()=>{estado.params[k]=el.value; calcularDesc();}; });
+  CAMPOS_C.forEach(k => { const el=$('#c-'+k); el.value=estado.cliente[k]; el.oninput=()=>{estado.cliente[k]=el.value; resumosCabecalho(); salvar();}; });
+  formatarAoSair($('#p-tarifa'));
+  resumosCabecalho();
+}
+function resumosCabecalho(){
+  const P = estado.params, partesE = [];
+  if (num(P.adval)) partesE.push('ad valorem '+fmtNum(num(P.adval),4)+'%');
+  if (num(P.tarifa)) partesE.push('tarifa '+rs(num(P.tarifa)));
+  if (num(P.iof)) partesE.push('IOF adic. '+fmtNum(num(P.iof),4)+'%');
+  $('#resumo-encargos').textContent = partesE.length ? '· '+partesE.join(' · ') : '· nenhum';
+  $('#resumo-cliente').textContent = estado.cliente.nome ? '· '+estado.cliente.nome : '· opcional';
+}
+
+function campo(rot, k, v, extra=''){ return `<label class="f"><span>${rot}</span><div class="inp"><input data-k="${k}" value="${esc(v)}" ${extra}></div></label>`; }
+function montarDesc(foco){
+  const lista = $('#lista-desc');
+  lista.innerHTML = estado.cheques.map((c,i)=>`<div class="chq${c.aberto?' aberto':''}${c.foto?' dafoto':''}" data-i="${i}">
+    <div class="chq-main">
+      <span class="chq-n">${i+1}</span>
+      <label class="f venc"><span>Vencimento</span><div class="inp"><input type="date" data-k="venc" value="${esc(c.venc)}"></div></label>
+      <label class="f valor"><span>Valor</span><div class="inp grande"><i>R$</i><input class="dir num" data-k="valor" inputmode="decimal" placeholder="0,00" value="${esc(c.valor)}"></div></label>
+      <div class="out prazo"><span>Prazo</span><b class="num" data-r="prazo">—</b></div>
+      <div class="out juros"><span>Juros</span><b class="num" data-r="juros">—</b></div>
+      <div class="out iof"><span>IOF</span><b class="num" data-r="iof">—</b></div>
+      <div class="out liq"><span>Líquido</span><b class="num" data-r="desembolso">—</b></div>
+      <div class="acts"><button class="ic tg" title="Dados do cheque (emitente, banco, número)"><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><button class="ic rm" title="Remover cheque">✕</button></div>
+    </div>
+    <div class="chq-alerta oculto" data-r="alerta"></div>
+    <div class="chq-det">
+      <div class="campos">
+        ${campo('Emitente / sacador','sacador',c.sacador)}${campo('CPF/CNPJ do emitente','doc',c.doc)}${campo('Banco','banco',c.banco,'inputmode="numeric"')}
+        ${campo('Agência','agencia',c.agencia,'inputmode="numeric"')}${campo('Conta','conta',c.conta)}${campo('Nº do cheque','numero',c.numero,'inputmode="numeric"')}
+      </div>
+      <button class="btn lev ver-info${c.foto?.obs?.length?' com-aviso':''}" data-acao="info">Ver mais informações${c.foto?.obs?.length?` <span class="n-av">⚠ ${c.foto.obs.length} ${c.foto.obs.length===1?'aviso':'avisos'}</span>`:''}</button>
+      <div class="info-extra">
+        <div class="extra"><span>Ad valorem: <b class="num" data-r="adval">—</b></span><span>Tarifa: <b class="num" data-r="tarifa">—</b></span></div>
+        ${c.foto ? infoFoto(c.foto) : ''}
+      </div>
+    </div></div>`).join('');
+  lista.querySelectorAll('.chq').forEach(div => {
+    const i = +div.dataset.i;
+    div.querySelectorAll('input').forEach(el => el.oninput = () => { estado.cheques[i][el.dataset.k] = el.value; calcularDesc(); });
+    const valor = div.querySelector('[data-k=valor]');
+    formatarAoSair(valor);
+    valor.addEventListener('keydown', e => { if (e.key==='Enter'){ e.preventDefault(); valor.blur();
+      if (i === estado.cheques.length-1) adicionarCheque(); else lista.children[i+1].querySelector('[data-k=venc]').focus(); } });
+    div.querySelector('[data-acao=info]').onclick = e => {
+      const aberto = div.classList.toggle('info-aberta');
+      e.currentTarget.firstChild.textContent = aberto ? 'Ocultar informações' : 'Ver mais informações';
+    };
+    div.querySelector('.tg').onclick = () => { estado.cheques[i].aberto = !estado.cheques[i].aberto; div.classList.toggle('aberto'); salvar(); };
+    div.querySelector('.rm').onclick = () => { estado.cheques.splice(i,1); if(!estado.cheques.length) estado.cheques.push(chequeVazio()); montarDesc(); };
+  });
+  calcularDesc();
+  if (foco) lista.lastElementChild.querySelector('[data-k=venc]').focus();
+}
+function adicionarCheque(){
+  // sugere o vencimento do cheque seguinte: 30 dias após o último informado
+  const ult = [...estado.cheques].reverse().find(c=>c.venc), novo = chequeVazio();
+  if (ult){ const [a,m,d] = ult.venc.split('-').map(Number); const dt = new Date(Date.UTC(a,m,Math.min(d,28)));
+    if (d>28){ const fim = new Date(Date.UTC(a,m+1,0)).getUTCDate(); dt.setUTCDate(Math.min(d,fim)); }
+    novo.venc = dt.toISOString().slice(0,10); }
+  estado.cheques.push(novo); montarDesc(true);
+}
+
+function calcularDesc(){
+  salvar(); resumosCabecalho();
+  const P = estado.params;
+  const params = {aceite:P.aceite, taxa:pct(P.taxa), adval:pct(P.adval), tarifa:num(P.tarifa), floating:Math.trunc(num(P.floating)), iof:pct(P.iof)};
+  const validos = estado.cheques.map((c,i)=>({i, venc:c.venc, valor:num(c.valor)})).filter(c => c.venc && P.aceite && c.valor);
+  const r = calcDesconto(params, validos);
+  const divs = $('#lista-desc').children;
+  for (const d of divs){ d.querySelectorAll('b[data-r]').forEach(b=>b.textContent='—'); d.classList.remove('alerta'); d.querySelector('[data-r=alerta]').classList.add('oculto'); }
+  const alertas = [];
+  validos.forEach((c,k) => {
+    const l = r.linhas[k], d = divs[c.i], put = (n,t) => d.querySelector(`[data-r=${n}]`).textContent = t;
+    put('prazo', l.prazo + (Math.abs(l.prazo)===1?' dia':' dias'));
+    ['juros','iof','desembolso','adval','tarifa'].forEach(n => put(n, rs(l[n])));
+    if (l.alerta){ d.classList.add('alerta'); const a = d.querySelector('[data-r=alerta]');
+      a.textContent = 'Vencimento anterior à data de aceite: prazo negativo.'; a.classList.remove('oculto');
+      alertas.push(`cheque ${c.i+1} (venc. ${fmtData(c.venc)})`); }
+  });
+  $('#aviso-desc').innerHTML = alertas.length ? `<div class="aviso"><span>⚠</span><span>Vencimento anterior à data de aceite: ${alertas.join(', ')}. O cálculo segue o Excel, mas os juros e o IOF ficam negativos e o líquido supera o valor do cheque. Confira as datas.</span></div>` : '';
+
+  const T = r.total, custo = T.valor - T.desembolso, n = validos.length;
+  $('#r-liquido').textContent = rs(T.desembolso); $('#bm-liquido').textContent = rs(T.desembolso);
+  $('#bm-sub').textContent = n ? `${n} ${n===1?'cheque':'cheques'} · face ${rs(T.valor)}` : 'Informe vencimento e valor';
+  $('#r-sub').textContent = n ? `${n} ${n===1?'cheque':'cheques'} · valor de face ${rs(T.valor)}` : 'Informe vencimento e valor dos cheques';
+  const partesB = [[T.desembolso,'--c-liq'],[T.juros,'--c-juros'],[T.iof,'--c-iof'],[T.adval+T.tarifa,'--c-outros']];
+  $('#r-barra').innerHTML = (T.valor>0 && partesB.every(([v])=>v>=0))
+    ? partesB.map(([v,c])=>`<div style="width:${v/T.valor*100}%;background:var(${c})"></div>`).join('') : '';
+  const prazoMedio = T.valor ? r.linhas.reduce((s,l,k)=>s+l.prazo*validos[k].valor,0)/T.valor : 0;
+  const linha = (rot,v,cor,cls='') => `<div class="linha ${cls}"><span class="rot">${cor?`<span class="bol" style="background:var(${cor})"></span>`:''}${rot}</span><span class="num">${v}</span></div>`;
+  $('#resumo-desc').innerHTML =
+      linha('Valor de face', rs(T.valor))
+    + linha('Juros', '− '+rs(T.juros), '--c-juros')
+    + linha('IOF', '− '+rs(T.iof), '--c-iof')
+    + linha('Ad valorem', '− '+rs(T.adval), '--c-outros')
+    + linha('Tarifas', '− '+rs(T.tarifa), '--c-outros')
+    + linha('Líquido (desembolso)', rs(T.desembolso), '--c-liq', 'tot')
+    + `<div class="kpis">
+        <div class="kpi"><span>Deságio</span><b class="num">${T.valor?fmtNum(custo/T.valor*100,2)+'%':'—'}</b></div>
+        <div class="kpi"><span>Prazo médio</span><b class="num">${n?fmtNum(prazoMedio,0)+' d':'—'}</b></div>
+        <div class="kpi"><span>Custo total</span><b class="num">${n?brl(custo):'—'}</b></div>
+      </div>
+`;
+  const ac = $('#aceitar-op'); ac.disabled = !n; $('#zap-op').disabled = !n;
+  ac.title = n ? 'Guardar esta operação em “Operações aceitas”' : 'Informe ao menos um cheque com vencimento e valor';
+}
+function limparDesc(){ if(confirm('Limpar cliente, condições e cheques? A taxa volta a 4% e o floating a 2 dias.')){
+  const n=novoEstado(); estado.cliente=n.cliente; estado.params=n.params; estado.cheques=n.cheques; ligarCabecalho(); montarDesc(); } }
+function exemploDesc(){
+  estado.cliente = {nome:'CLIENTE EXEMPLO',doc:'',tel:'',end:''};
+  estado.params = {aceite:'2024-07-08', taxa:'10', adval:'0', tarifa:'0', floating:'0', iof:'0'};
+  estado.cheques = ['2024-04-17','2024-05-17','2024-06-17'].map(v=>({...chequeVazio(), venc:v, valor:'4.950,00'}));
+  ligarCabecalho(); montarDesc();
+}
+$('#add-desc').onclick = adicionarCheque;
+$('#bm-resumo').onclick = () => document.querySelector('#aba-desconto aside').scrollIntoView({behavior:'smooth'});
+document.body.classList.add('aba-desconto');
+$('#ex-desc').onclick = exemploDesc;
+$('#limpa-desc').onclick = limparDesc;
+$('#aceitar-op').onclick = abrirAceite;
+$('#zap-op').onclick = () => abrirZap(operacaoAtual());
+
+/* ================= OPERAÇÕES ACEITAS =================
+   Guardadas neste navegador (localStorage), com os valores calculados no momento do aceite. */
+const CHAVE_OPS = 'calcCheques.operacoes';
+const VERSAO_CALC = '2026-11-25';
+const CHAVE_USUARIO = 'calcCheques.usuario', CHAVE_PEND = 'calcCheques.pendenteEnvio';
+const agora = () => new Date().toISOString();
+/* Participantes da 2RPL (pedido do usuário, 25/11/2026) */
+const EQUIPE = ['Pedro', 'Rubens', 'Renato', 'Leonardo'];
+function usuario(){ try { return localStorage.getItem(CHAVE_USUARIO) || ''; } catch(e){ return ''; } }
+function definirUsuario(n){
+  n = limpaNome(n); try { localStorage.setItem(CHAVE_USUARIO, n); } catch(e){}
+  $('#eq-nome').textContent = n || '—';
+  if ($('#dlg-usuario').open && n) $('#dlg-usuario').close();
+  return n;
+}
+function pedirUsuario(){
+  $('#lista-usuarios').innerHTML = EQUIPE.map(n => `<button class="btn${n===usuario()?' ativo':''}" data-nome="${esc(n)}">${esc(n)}</button>`).join('');
+  $('#lista-usuarios').querySelectorAll('button').forEach(b => b.onclick = () => definirUsuario(b.dataset.nome));
+  if (!$('#dlg-usuario').open) $('#dlg-usuario').showModal();
+  return '';
+}
+/* Sem usuário escolhido: abre a escolha e interrompe a ação (o usuário repete depois de escolher). */
+function garantirUsuario(){ return usuario() || pedirUsuario(); }
+function marcarPendente(v){ try { v ? localStorage.setItem(CHAVE_PEND, '1') : localStorage.removeItem(CHAVE_PEND); } catch(e){} $('#eq-pend').classList.toggle('oculto', !v); }
+const temPendente = () => { try { return !!localStorage.getItem(CHAVE_PEND); } catch(e){ return false; } };
+/* Operações excluídas ficam guardadas como "excluída" para a exclusão chegar à equipe; não aparecem na lista. */
+const opsAtivas = () => carregarOps().filter(o => !o.excluida);
+function carregarOps(){ try { const v = JSON.parse(localStorage.getItem(CHAVE_OPS)); return Array.isArray(v) ? v : []; } catch(e){ return []; } }
+function salvarOps(ops){ localStorage.setItem(CHAVE_OPS, JSON.stringify(ops)); }
+const limpaNome = s => String(s||'').trim().replace(/\s+/g,' ');
+const chaveNome = s => limpaNome(s).toLocaleLowerCase('pt-BR');
+/* Nome livre → mantém; nome repetido → acrescenta 2, 3, 4… (o primeiro fica sem número) */
+function nomeUnico(base, ops){
+  base = limpaNome(base); const b = chaveNome(base); let max = 0;
+  for (const o of ops){
+    const n = chaveNome(o.nome);
+    if (n === b) max = Math.max(max, 1);
+    else if (n.startsWith(b + ' ') && /^\d+$/.test(n.slice(b.length + 1))) max = Math.max(max, +n.slice(b.length + 1));
+  }
+  return max ? `${base} ${max + 1}` : base;
+}
+function paramsNumericos(P){ return {aceite:P.aceite, taxa:pct(P.taxa), adval:pct(P.adval), tarifa:num(P.tarifa), floating:Math.trunc(num(P.floating)), iof:pct(P.iof)}; }
+/* Retrato da operação na tela, com os valores calculados */
+function operacaoAtual(){
+  const P = estado.params, params = paramsNumericos(P);
+  const validos = estado.cheques.filter(c => c.venc && P.aceite && num(c.valor));
+  const r = calcDesconto(params, validos.map(c => ({venc:c.venc, valor:num(c.valor)})));
+  const incompletos = estado.cheques.filter(c => !validos.includes(c) && (c.venc || c.valor || c.sacador)).length;
+  return {
+    cliente: {...estado.cliente}, paramsTxt: {...P}, params,
+    cheques: validos.map((c,k) => ({venc:c.venc, valor:num(c.valor), sacador:c.sacador||'', doc:c.doc||'', banco:c.banco||'', agencia:c.agencia||'',
+      conta:c.conta||'', numero:c.numero||'', foto: c.foto ? {arquivo:c.foto.arquivo, confianca:c.foto.confianca, obs:c.foto.obs||[]} : null, ...r.linhas[k]})),
+    total: r.total, incompletos,
+  };
+}
+
+let opPendente = null;
+function abrirAceite(){
+  opPendente = operacaoAtual();
+  if (!opPendente.cheques.length) return;
+  const sugestao = opPendente.cliente.nome || opPendente.cheques.find(c=>c.sacador)?.sacador || ('Operação ' + fmtData(opPendente.paramsTxt.aceite));
+  $('#ac-nome').value = limpaNome(sugestao);
+  $('#ac-usuario').innerHTML = (usuario() ? '' : '<option value="">Escolha…</option>') + EQUIPE.map(n => `<option${n===usuario()?' selected':''}>${esc(n)}</option>`).join('')
+    + (usuario() && !EQUIPE.includes(usuario()) ? `<option selected>${esc(usuario())}</option>` : '');
+  atualizarNomeFinal();
+  const T = opPendente.total, n = opPendente.cheques.length;
+  const linha = (a,b,cls='') => `<div class="linha ${cls}"><span class="rot">${a}</span><span class="num">${b}</span></div>`;
+  $('#ac-resumo').innerHTML = linha('Data de aceite', fmtData(opPendente.paramsTxt.aceite))
+    + linha('Cheques', n) + linha('Valor de face', rs(T.valor)) + linha('Juros + IOF + encargos', '− ' + rs(T.valor - T.desembolso))
+    + linha('Líquido a pagar', rs(T.desembolso), 'tot');
+  const av = [];
+  const neg = opPendente.cheques.filter(c => c.alerta).length;
+  if (neg) av.push(`${neg} ${neg===1?'cheque tem':'cheques têm'} vencimento anterior à data de aceite.`);
+  const duv = opPendente.cheques.filter(c => c.foto && (c.foto.confianca !== 'alta' || c.foto.obs.length)).length;
+  if (duv) av.push(`${duv} ${duv===1?'cheque lido':'cheques lidos'} da foto com pontos a conferir.`);
+  if (opPendente.incompletos) av.push(`${opPendente.incompletos} ${opPendente.incompletos===1?'cheque incompleto (sem vencimento ou valor) ficará':'cheques incompletos (sem vencimento ou valor) ficarão'} de fora.`);
+  $('#ac-avisos').innerHTML = av.length ? `<div class="aviso"><span>⚠</span><span>${av.join('<br>')}</span></div>` : '';
+  $('#dlg-form').classList.remove('oculto'); $('#dlg-ok').classList.add('oculto');
+  $('#dlg-aceitar').showModal(); $('#ac-nome').select();
+}
+function atualizarNomeFinal(){
+  const nome = limpaNome($('#ac-nome').value);
+  if (!nome){ $('#ac-final').innerHTML = 'Informe um nome para identificar a operação.'; return; }
+  const final = nomeUnico(nome, carregarOps());
+  $('#ac-final').innerHTML = `Será guardada como <b>${esc(final)}</b>` + (final !== nome ? ' (já existe operação com este nome).' : '.');
+}
+function confirmarAceite(){
+  const nome = limpaNome($('#ac-nome').value);
+  if (!nome){ $('#ac-nome').focus(); return; }
+  const quem = limpaNome($('#ac-usuario').value);
+  if (!quem){ $('#ac-usuario').focus(); return; }
+  definirUsuario(quem);
+  const ops = carregarOps(), final = nomeUnico(nome, ops), quando = agora();
+  const {incompletos, ...dados} = opPendente;
+  ops.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2,7), nome: final, aceitaEm: quando, aceitaPor: quem, atualizadoEm: quando, ...dados});
+  try { salvarOps(ops); }
+  catch(e){ alert('Não foi possível guardar a operação neste navegador (armazenamento cheio ou bloqueado). Faça um backup e tente de novo.'); return; }
+  atualizarContOps(); marcarPendente(true);
+  $('#ok-texto').textContent = `Operação “${final}” aceita e guardada.`;
+  $('#dlg-form').classList.add('oculto'); $('#dlg-ok').classList.remove('oculto');
+}
+function novaOperacao(){
+  const n = novoEstado(); estado.cliente = n.cliente; estado.params = n.params; estado.cheques = n.cheques;
+  $('#foto-status').innerHTML = ''; ligarCabecalho(); montarDesc();
+}
+function irParaAba(a){ document.querySelector(`.abas button[data-aba=${a}]`).click(); }
+function atualizarContOps(){ $('#n-ops').textContent = opsAtivas().length; }
+
+/* Situação de cada cheque e da operação (controle de pagamento) */
+const plural = (n, um, varios) => `${n} ${n===1?um:varios}`;
+function statusCheque(c){
+  if (c.pagoEm) return {cls:'pago', txt:'Pago em'};
+  const d = diasCorridos(hoje(), c.venc);
+  if (d > 0) return {cls:'avencer', txt:`Vence em ${plural(d,'dia','dias')}`};
+  if (d === 0) return {cls:'hoje', txt:'Vence hoje'};
+  return {cls:'venc', txt:`Vencido há ${plural(-d,'dia','dias')}`};
+}
+function statusOp(o){
+  const n = o.cheques.length, pagos = o.cheques.filter(c => c.pagoEm).length;
+  if (pagos === n) return {cls:'quitada', txt:'✓ Quitada', pagos, n};
+  if (o.cheques.some(c => !c.pagoEm && c.venc < hoje())) return {cls:'atraso', txt:'Em atraso', pagos, n};
+  return {cls:'emaberto', txt:'Em aberto', pagos, n};
+}
+/* Data sugerida ao marcar o pagamento: o vencimento (se já chegou) ou hoje */
+const dataPagamentoPadrao = c => c.venc <= hoje() ? c.venc : hoje();
+function marcarPagamento(id, i, data){
+  const quem = garantirUsuario(); if (!quem){ renderOps(); return; }
+  const ops = carregarOps(), o = ops.find(x => x.id === id); if (!o) return;
+  const c = o.cheques[i], quando = agora();
+  c.pagoEm = data || null; c.pagoPor = data ? quem : null; c.pagoAtualizadoEm = quando; c.pagoAlteradoPor = quem;
+  o.atualizadoEm = quando;
+  salvarOps(ops); marcarPendente(true); renderOps();
+}
+let filtroOps = 'todas';
+const opsAbertas = new Set();
+function renderOps(){
+  const todas = opsAtivas().sort((a,b) => b.aceitaEm.localeCompare(a.aceitaEm));
+  const q = chaveNome($('#ops-busca').value);
+  let ops = q ? todas.filter(o => chaveNome([o.nome, o.cliente?.nome, ...o.cheques.flatMap(c=>[c.sacador,c.numero,c.doc])].join(' ')).includes(q)) : todas;
+  if (filtroOps === 'abertas') ops = ops.filter(o => statusOp(o).cls !== 'quitada');
+  if (filtroOps === 'quitadas') ops = ops.filter(o => statusOp(o).cls === 'quitada');
+  document.querySelectorAll('#ops-filtro button').forEach(b => b.classList.toggle('ativo', b.dataset.f === filtroOps));
+  const chs = ops.flatMap(o => o.cheques), abertos = chs.filter(c => !c.pagoEm), vencidos = abertos.filter(c => c.venc < hoje());
+  const somaV = l => l.reduce((s,c)=>s+c.valor,0);
+  $('#ops-kpis').innerHTML = [
+    ['Operações', ops.length + (ops.length !== todas.length ? ` de ${todas.length}` : '')],
+    ['Cheques', `${chs.length} · ${chs.length-abertos.length} pagos`],
+    ['Líquido pago aos clientes', rs(ops.reduce((s,o)=>s+o.total.desembolso,0))],
+    ['A receber (cheques em aberto)', rs(somaV(abertos))],
+    ['Vencidos sem pagamento', vencidos.length ? `${vencidos.length} · ${rs(somaV(vencidos))}` : '0', vencidos.length ? 'alerta' : ''],
+  ].map(([a,b,c])=>`<div class="${c||''}"><span>${a}</span><b class="num">${b}</b></div>`).join('');
+  const dt = iso => new Date(iso).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+  $('#ops-lista').innerHTML = !todas.length ? '<div class="vazio-ops">Nenhuma operação aceita ainda. Na aba Desconto, use “Aceitar operação”.</div>'
+    : !ops.length ? '<div class="vazio-ops">Nenhuma operação encontrada.</div>'
+    : ops.map(o => { const P = o.paramsTxt, T = o.total, so = statusOp(o); return `<div class="op ${so.cls}${opsAbertas.has(o.id)?' aberto':''}" data-id="${esc(o.id)}">
+      <div class="op-main">
+        <div class="op-nome"><b>${esc(o.nome)}</b><small>Aceita em ${dt(o.aceitaEm)}${o.aceitaPor?' por '+esc(o.aceitaPor):''}</small></div>
+        <div class="out"><span>Situação</span><b><span class="selo-op ${so.cls}">${so.txt}</span>${so.cls!=='quitada'?` <small class="mut">${so.pagos} de ${so.n} pagos</small>`:''}</b></div>
+        <div class="out"><span>Data de aceite</span><b class="num">${fmtData(P.aceite)}</b></div>
+        <div class="out"><span>Valor de face</span><b class="num">${rs(T.valor)}</b></div>
+        <div class="out liq"><span>Líquido pago</span><b class="num">${rs(T.desembolso)}</b></div>
+        <div class="acts"><button class="ic rm" data-acao="excluir-rapido" title="Excluir operação"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg></button><button class="ic tg" title="Detalhes da operação"><svg class="seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></div>
+      </div>
+      <div class="op-chqs">${o.cheques.map((c,i) => { const st = statusCheque(c); return `<div class="op-chq ${st.cls}" data-i="${i}">
+        <input type="checkbox" class="pg" ${c.pagoEm?'checked':''} title="Marcar o cheque como pago" aria-label="Cheque ${i+1} pago">
+        <div class="ident"><b>Cheque ${i+1}</b>${[c.numero&&'nº '+c.numero, c.sacador].filter(Boolean).map(x=>' · '+esc(x)).join('')}</div>
+        <div class="num">Venc. ${fmtData(c.venc)}</div>
+        <div class="num valor">${rs(c.valor)}</div>
+        <div class="st ${st.cls}">${st.txt}${c.pagoEm?` <input type="date" class="dpg" value="${esc(c.pagoEm)}" aria-label="Data do pagamento">${c.pagoPor?`<span class="quem">por ${esc(c.pagoPor)}</span>`:''}`:''}</div>
+      </div>`; }).join('')}</div>
+      <div class="op-det">
+        <div class="params">${o.cliente?.nome?`Cliente: <b>${esc(o.cliente.nome)}</b>${o.cliente.doc?' · '+esc(o.cliente.doc):''} · `:''}Taxa: <b>${esc(P.taxa)}% a.m.</b> · Floating: <b>${esc(P.floating)} dias</b>${num(P.adval)?` · Ad valorem: <b>${esc(P.adval)}%</b>`:''}${num(P.tarifa)?` · Tarifa: <b>${rs(num(P.tarifa))}</b>`:''}${num(P.iof)?` · IOF adicional: <b>${esc(P.iof)}%</b>`:''}</div>
+        <div class="rolar"><table class="tabela"><thead><tr><th>#</th><th>Vencimento</th><th>Emitente</th><th>Banco / Ag. / Conta</th><th>Nº</th><th class="n">Valor</th><th class="n">Prazo</th><th class="n">Juros</th><th class="n">IOF</th><th class="n">Líquido</th></tr></thead><tbody>
+        ${o.cheques.map((c,i)=>`<tr><td>${i+1}</td><td>${fmtData(c.venc)}</td><td>${esc(c.sacador)}</td><td>${esc([c.banco,c.agencia,c.conta].filter(Boolean).join(' / '))}</td><td>${esc(c.numero)}</td><td class="n num">${brl(c.valor)}</td><td class="n num">${c.prazo} d</td><td class="n num">${brl(c.juros)}</td><td class="n num">${brl(c.iof)}</td><td class="n num">${brl(c.desembolso)}</td></tr>`).join('')}
+        </tbody><tfoot><tr><td colspan="5">Total</td><td class="n num">${brl(T.valor)}</td><td></td><td class="n num">${brl(T.juros)}</td><td class="n num">${brl(T.iof)}</td><td class="n num">${brl(T.desembolso)}</td></tr></tfoot></table></div>
+        <div class="acoes"><button class="btn" data-acao="zap">Mensagem para o cliente</button><button class="btn" data-acao="reabrir">Reabrir cópia na calculadora</button><button class="btn perigo" data-acao="excluir">Excluir</button></div>
+      </div></div>`; }).join('');
+  $('#ops-lista').querySelectorAll('.op').forEach(div => {
+    const id = div.dataset.id;
+    div.querySelector('.op-main').onclick = () => { div.classList.toggle('aberto'); div.classList.contains('aberto') ? opsAbertas.add(id) : opsAbertas.delete(id); };
+    div.querySelectorAll('.op-chq').forEach(l => {
+      const i = +l.dataset.i;
+      l.querySelector('.pg').onchange = e => {
+        const c = carregarOps().find(x => x.id === id).cheques[i];
+        marcarPagamento(id, i, e.target.checked ? dataPagamentoPadrao(c) : null);
+      };
+      const d = l.querySelector('.dpg'); if (d) d.onchange = () => marcarPagamento(id, i, d.value);
+    });
+    div.querySelector('[data-acao=reabrir]').onclick = () => reabrirOp(id);
+    div.querySelector('[data-acao=zap]').onclick = () => abrirZap(carregarOps().find(x => x.id === id));
+    div.querySelector('[data-acao=excluir]').onclick = () => excluirOp(id);
+    div.querySelector('[data-acao=excluir-rapido]').onclick = e => { e.stopPropagation(); excluirOp(id); };
+  });
+}
+function reabrirOp(id){
+  const o = carregarOps().find(x => x.id === id); if (!o) return;
+  if (!confirm(`Substituir a operação que está na aba Desconto por uma cópia de “${o.nome}”?\n\nA operação aceita continua guardada como está; se aceitar a cópia, ela vira uma nova operação.`)) return;
+  estado.cliente = {nome:'',doc:'',tel:'',end:'', ...o.cliente}; estado.params = {...o.paramsTxt};
+  estado.cheques = o.cheques.map(c => ({...chequeVazio(), venc:c.venc, valor:brl(c.valor), sacador:c.sacador, doc:c.doc, banco:c.banco, agencia:c.agencia, conta:c.conta, numero:c.numero}));
+  ligarCabecalho(); montarDesc(); irParaAba('desconto');
+}
+function excluirOp(id){
+  const ops = carregarOps(), o = ops.find(x => x.id === id); if (!o) return;
+  if (!confirm(`Excluir definitivamente a operação “${o.nome}”?\n\nA exclusão também vale para a equipe quando você compartilhar a atualização. Não é possível desfazer.`)) return;
+  const quem = garantirUsuario(); if (!quem) return;
+  Object.assign(o, {excluida:true, excluidaEm:agora(), excluidaPor:quem, atualizadoEm:agora()});
+  salvarOps(ops); marcarPendente(true); atualizarContOps(); renderOps();
+}
+function baixar(nome, conteudo, tipo){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([conteudo], {type: tipo})); a.download = nome;
+  document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+const hojeArq = () => hoje().split('-').reverse().join('-');
+function exportarCSV(){
+  const ops = opsAtivas(); if (!ops.length){ alert('Não há operações aceitas para exportar.'); return; }
+  const cel = v => { const t = String(v ?? ''); return /[;"\n]/.test(t) ? '"' + t.replace(/"/g,'""') + '"' : t; };
+  const dec = v => brl(v).replace(/\./g,'');
+  const cab = ['Operação','Aceita em','Cliente','Data de aceite','Taxa % a.m.','Floating (dias)','Cheque','Vencimento','Emitente','CPF/CNPJ','Banco','Agência','Conta','Nº do cheque','Valor','Prazo (dias)','Juros','Ad valorem','Tarifa','IOF','Líquido','Pago em','Situação do cheque','Aceita por','Pago por'];
+  const linhas = ops.flatMap(o => o.cheques.map((c,i) => [o.nome, new Date(o.aceitaEm).toLocaleString('pt-BR'), o.cliente?.nome, fmtData(o.paramsTxt.aceite),
+    o.paramsTxt.taxa, o.paramsTxt.floating, i+1, fmtData(c.venc), c.sacador, c.doc, c.banco, c.agencia, c.conta, c.numero,
+    dec(c.valor), c.prazo, dec(c.juros), dec(c.adval), dec(c.tarifa), dec(c.iof), dec(c.desembolso), fmtData(c.pagoEm||''), c.pagoEm ? 'Pago' : statusCheque(c).txt, o.aceitaPor, c.pagoEm ? c.pagoPor : ''].map(cel).join(';')));
+  baixar(`operacoes-aceitas-${hojeArq()}.csv`, '﻿' + [cab.join(';'), ...linhas].join('\r\n'), 'text/csv;charset=utf-8');
+}
+/* ===== Compartilhar com a equipe e receber atualização =====
+   O arquivo leva TODAS as operações (inclusive as excluídas, para a exclusão se espalhar).
+   Ao receber, junta com as deste computador: operação nova entra; pagamento e exclusão valem pela alteração mais recente. */
+function pacoteEquipe(){
+  return {app:'calculadora-cheques', versao:2, versaoCalc:VERSAO_CALC, exportadoEm:agora(), enviadoPor:usuario(), operacoes:carregarOps()};
+}
+async function fazerBackup(){
+  const ops = carregarOps(); if (!ops.length){ alert('Não há operações aceitas para compartilhar.'); return; }
+  const quando = new Date(), dd = n => String(n).padStart(2,'0');
+  const nome = `2RPL-operacoes-${dd(quando.getDate())}-${dd(quando.getMonth()+1)}-${quando.getFullYear()}-${dd(quando.getHours())}h${dd(quando.getMinutes())}.json`;
+  const conteudo = JSON.stringify(pacoteEquipe(), null, 1);
+  const arq = new File([conteudo], nome, {type:'application/json'});
+  if (navigator.canShare?.({files:[arq]})){
+    try {
+      await navigator.share({files:[arq], title:'Operações 2RPL', text:'Atualização das operações aceitas. Na calculadora: Operações aceitas › Receber atualização.'});
+      marcarPendente(false); statusEquipe('ok', `Arquivo <b>${esc(nome)}</b> compartilhado.`); return;
+    } catch(e){ if (e.name === 'AbortError') return; }
+  }
+  baixar(nome, conteudo, 'application/json'); marcarPendente(false);
+  statusEquipe('ok', `Arquivo <b>${esc(nome)}</b> salvo na pasta de Downloads. Envie-o no grupo do WhatsApp (clipe › Documento). Ele também serve de backup.`);
+}
+function statusEquipe(tipo, html){ $('#eq-status').innerHTML = `<div class="eq-res ${tipo==='erro'?'erro':''}">${html}</div>`; }
+/* Junta operações recebidas com as locais. Função pura (testável). */
+function mesclarOps(locais, recebidas){
+  const mapa = new Map(locais.map(o => [o.id, JSON.parse(JSON.stringify(o))]));
+  const res = {novas:[], pagamentos:0, exclusoes:[], renomeadas:[]};
+  for (const r of recebidas){
+    if (!r || !r.id || !r.nome || !Array.isArray(r.cheques) || !r.total) continue;
+    const l = mapa.get(r.id);
+    if (!l){ mapa.set(r.id, JSON.parse(JSON.stringify(r))); if (!r.excluida) res.novas.push(r.nome); continue; }
+    if (r.excluida && !l.excluida){ Object.assign(l, {excluida:true, excluidaEm:r.excluidaEm, excluidaPor:r.excluidaPor}); res.exclusoes.push(l.nome); }
+    r.cheques.forEach((rc, i) => {
+      const lc = l.cheques[i]; if (!lc) return;
+      if ((rc.pagoAtualizadoEm || '') > (lc.pagoAtualizadoEm || '')){
+        Object.assign(lc, {pagoEm:rc.pagoEm||null, pagoPor:rc.pagoPor||null, pagoAtualizadoEm:rc.pagoAtualizadoEm, pagoAlteradoPor:rc.pagoAlteradoPor||null});
+        res.pagamentos++;
+      }
+    });
+    if ((r.atualizadoEm || '') > (l.atualizadoEm || '')) l.atualizadoEm = r.atualizadoEm;
+  }
+  // Nomes repetidos entre computadores: a operação aceita depois recebe o próximo número (regra igual em todos os computadores)
+  const todas = [...mapa.values()].sort((a,b) => (a.aceitaEm+a.id).localeCompare(b.aceitaEm+b.id)), usadas = [];
+  for (const o of todas){
+    if (usadas.some(u => chaveNome(u.nome) === chaveNome(o.nome))){
+      const antes = o.nome; o.nome = nomeUnico(o.nome.replace(/\s+\d+$/, ''), usadas);
+      if (!o.excluida) res.renomeadas.push(`${antes} → ${o.nome}`);
+    }
+    usadas.push(o);
+  }
+  return {ops: todas, ...res};
+}
+async function restaurarBackup(arq){
+  let dados;
+  try { dados = JSON.parse(await arq.text()); } catch(e){ statusEquipe('erro', 'Este arquivo não é uma atualização da calculadora.'); return; }
+  const recebidas = Array.isArray(dados) ? dados : dados?.operacoes;
+  if (!Array.isArray(recebidas)){ statusEquipe('erro', 'Este arquivo não é uma atualização da calculadora.'); return; }
+  const r = mesclarOps(carregarOps(), recebidas);
+  try { salvarOps(r.ops); } catch(e){ statusEquipe('erro', 'Não foi possível guardar neste navegador.'); return; }
+  atualizarContOps(); renderOps();
+  const quando = dados.exportadoEm ? new Date(dados.exportadoEm).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}) : '';
+  const itens = [];
+  if (r.novas.length) itens.push(`${plural(r.novas.length,'operação nova','operações novas')}: ${r.novas.map(esc).join(', ')}`);
+  if (r.pagamentos) itens.push(`${plural(r.pagamentos,'pagamento atualizado','pagamentos atualizados')}`);
+  if (r.exclusoes.length) itens.push(`${plural(r.exclusoes.length,'operação excluída','operações excluídas')}: ${r.exclusoes.map(esc).join(', ')}`);
+  if (r.renomeadas.length) itens.push(`Nome repetido entre computadores, renumerado: ${r.renomeadas.map(esc).join('; ')}`);
+  const aviso = dados.versaoCalc && dados.versaoCalc > VERSAO_CALC ? '<div style="margin-top:6px;color:var(--neg)">⚠ Quem enviou usa uma versão mais nova da calculadora. Peça o arquivo atualizado da calculadora.</div>' : '';
+  statusEquipe('ok', `<b>Atualização recebida</b>${dados.enviadoPor?` de ${esc(dados.enviadoPor)}`:''}${quando?` (${quando})`:''}.` +
+    (itens.length ? `<ul>${itens.map(t=>`<li>${t}</li>`).join('')}</ul>` : ' Nada de novo: este computador já estava atualizado.') + aviso);
+}
+(function ligarOps(){
+  $('#ac-nome').oninput = atualizarNomeFinal;
+  $('#ac-nome').onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); confirmarAceite(); } };
+  $('#ac-cancelar').onclick = () => $('#dlg-aceitar').close();
+  $('#ac-confirmar').onclick = confirmarAceite;
+  $('#ok-fechar').onclick = () => $('#dlg-aceitar').close();
+  $('#ok-nova').onclick = () => { $('#dlg-aceitar').close(); novaOperacao(); };
+  $('#ok-ver').onclick = () => { $('#dlg-aceitar').close(); irParaAba('operacoes'); };
+  $('#ops-busca').oninput = renderOps;
+  document.querySelectorAll('#ops-filtro button').forEach(b => b.onclick = () => { filtroOps = b.dataset.f; renderOps(); });
+  $('#ops-csv').onclick = exportarCSV;
+  $('#ops-backup').onclick = fazerBackup;
+  $('#ops-restaurar').onclick = () => $('#ops-arq').click();
+  $('#ops-arq').onchange = e => { if (e.target.files[0]) restaurarBackup(e.target.files[0]); e.target.value = ''; };
+  $('#ok-compartilhar').onclick = () => { $('#dlg-aceitar').close(); irParaAba('operacoes'); fazerBackup(); };
+  $('#eq-trocar').onclick = pedirUsuario;
+  const aba = $('#aba-operacoes');
+  aba.addEventListener('dragover', e => { e.preventDefault(); aba.classList.add('sobre'); });
+  aba.addEventListener('dragleave', e => { if (!aba.contains(e.relatedTarget)) aba.classList.remove('sobre'); });
+  aba.addEventListener('drop', e => { e.preventDefault(); aba.classList.remove('sobre'); const f = e.dataTransfer.files[0]; if (f) restaurarBackup(f); });
+  definirUsuario(usuario()); marcarPendente(temPendente());
+  if (!usuario()) pedirUsuario();
+  atualizarContOps();
+})();
+
+/* ================= MENSAGEM PARA O CLIENTE (WhatsApp) =================
+   Monta o texto a partir de uma operação (a da tela ou uma aceita). O envio é sempre feito pelo usuário no WhatsApp. */
+const CHAVE_ASSIN = 'calcCheques.assinatura';
+const CHAVE_MODELO = 'calcCheques.modeloZap';
+let modeloZap = 'padrao';
+try { if (localStorage.getItem(CHAVE_MODELO) === 'renatin') modeloZap = 'renatin'; } catch(e){}
+/* Estilo Renatin: mesmo conteúdo, começa com "Fala ae sangue bom", sem pontuação e sem linhas em branco.
+   Datas e valores mantêm / . , entre os dígitos para continuarem legíveis. */
+function semPontuacao(t){
+  return t.replace(/[*•!?:;"“”'()…—–]/g, ' ')
+          .replace(/(?<!\d)[.,]|[.,](?!\d)/g, ' ')
+          .replace(/(^|\s)-+(?=\s|$)/g, ' ')
+          .replace(/[ \t]+/g, ' ').trim();
+}
+function textoZap(op, assinatura, nomeCliente = op.cliente?.nome, modelo = modeloZap){
+  if (modelo === 'renatin'){
+    // sempre no singular, mesmo com vários cheques (pedido do usuário)
+    const n = op.cheques.length, L = ['Fala ae sangue bom', 'Segue a proposta para o seu cheque', `Data de aceite ${fmtData(op.paramsTxt.aceite)}`];
+    if (n === 1) L.push(`Vencimento ${fmtData(op.cheques[0].venc)}`);
+    else L.push('Vencimento', ...op.cheques.map(c => fmtData(c.venc)));
+    L.push(`Valor a ser pago pelo cheque ${rs(op.total.desembolso)}`, 'Posso seguir com a operação patrao', assinatura || '');
+    return L.map(semPontuacao).filter(Boolean).join('\n');
+  }
+  const T = op.total, n = op.cheques.length;
+  const nome = limpaNome(nomeCliente).split(' ')[0];
+  const L = [nome ? `Fala, ${nome}, blz?` : 'Fala, blz?', ''];
+  L.push(`Segue a proposta para ${n===1?'o seu cheque':'os seus cheques'}:`, '');
+  L.push(`*Data de aceite:* ${fmtData(op.paramsTxt.aceite)}`);
+  if (n === 1) L.push(`*Vencimento:* ${fmtData(op.cheques[0].venc)}`);
+  else { L.push('*Vencimentos:*'); op.cheques.forEach(c => L.push(`• ${fmtData(c.venc)}`)); }
+  L.push('', `*Valor a ser pago ${n===1?'pelo cheque':'pelos cheques'}: ${rs(T.desembolso)}*`, '');
+  L.push('Posso seguir com a operação?');
+  if (limpaNome(assinatura)) L.push('', limpaNome(assinatura));
+  return L.join('\n');
+}
+let zapOp = null;
+function abrirZap(op){
+  if (!op || !op.cheques?.length) return;
+  zapOp = op;
+  let assin = ''; try { assin = localStorage.getItem(CHAVE_ASSIN) || ''; } catch(e){}
+  $('#zap-assin').value = assin;
+  $('#zap-tel').value = op.cliente?.tel || '';
+  // nome: o do cliente; numa operação aceita sem cliente, o nome da operação sem o número final
+  $('#zap-nome').value = limpaNome(op.cliente?.nome) || (op.nome ? limpaNome(op.nome).replace(/\s+\d+$/, '') : '');
+  $('#zap-texto').value = textoZap(op, assin, $('#zap-nome').value);
+  $('#zap-ok').textContent = '';
+  $('#dlg-zap').showModal();
+}
+/* Número para o link do WhatsApp: só dígitos; com DDD (10 ou 11 dígitos) recebe o 55 do Brasil */
+function telZap(t){
+  let d = String(t||'').replace(/\D/g,'').replace(/^0+/,'');
+  if (d.length === 10 || d.length === 11) d = '55' + d;
+  return d.length >= 12 ? d : '';
+}
+function linkZap(tel, texto){ const d = telZap(tel); return `https://wa.me/${d}?text=${encodeURIComponent(texto)}`; }
+(function ligarZap(){
+  $('#zap-assin').oninput = () => {
+    try { localStorage.setItem(CHAVE_ASSIN, $('#zap-assin').value.trim()); } catch(e){}
+    if (zapOp) $('#zap-texto').value = textoZap(zapOp, $('#zap-assin').value, $('#zap-nome').value);
+  };
+  const marcarModelo = () => document.querySelectorAll('#zap-modelo button').forEach(b => b.classList.toggle('ativo', b.dataset.modelo === modeloZap));
+  marcarModelo();
+  document.querySelectorAll('#zap-modelo button').forEach(b => b.onclick = () => {
+    modeloZap = b.dataset.modelo; marcarModelo();
+    try { localStorage.setItem(CHAVE_MODELO, modeloZap); } catch(e){}
+    if (zapOp) $('#zap-texto').value = textoZap(zapOp, $('#zap-assin').value, $('#zap-nome').value);
+  });
+  $('#zap-nome').oninput = () => {
+    if (!zapOp) return;
+    $('#zap-texto').value = textoZap(zapOp, $('#zap-assin').value, $('#zap-nome').value);
+    if (!zapOp.id){ estado.cliente.nome = $('#zap-nome').value; $('#c-nome').value = estado.cliente.nome; resumosCabecalho(); salvar(); } // operação da tela: guarda no cadastro do cliente
+  };
+  $('#zap-fechar').onclick = () => $('#dlg-zap').close();
+  $('#zap-copiar').onclick = async () => {
+    try { await navigator.clipboard.writeText($('#zap-texto').value); $('#zap-ok').textContent = '✓ Texto copiado'; }
+    catch(e){ $('#zap-texto').select(); document.execCommand('copy'); $('#zap-ok').textContent = '✓ Texto copiado'; }
+  };
+  $('#zap-abrir').onclick = () => {
+    const tel = $('#zap-tel').value;
+    if (tel.trim() && !telZap(tel)){ $('#zap-ok').textContent = ''; alert('Número de WhatsApp incompleto. Informe com DDD, por exemplo (21) 99999-9999, ou deixe em branco para escolher o contato no WhatsApp.'); return; }
+    window.open(linkZap(tel, $('#zap-texto').value), '_blank');
+  };
+})();
+
+/* ================= LEITURA DE CHEQUES POR FOTO (IA Claude) =================
+   A biblioteca oficial da Anthropic só é baixada quando uma foto é lida; sem foto, a página não usa a rede. */
+const SDK_URL = 'https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@1.8.0/+esm';
+const MODELO_FOTO = 'claude-opus-5-5';
+const CHAVE_API = 'calcCheques.apiKey';
+let sdkCarregando = null;
+const carregarSDK = () => sdkCarregando ||= import(SDK_URL).then(m => m.default).catch(e => { sdkCarregando = null; throw e; });
+
+const nulo = s => ({anyOf:[s,{type:'null'}]});
+const TXT = nulo({type:'string'});
+const ESQUEMA_CHEQUES = {
+  type:'object', additionalProperties:false, required:['cheques'],
+  properties:{ cheques:{ type:'array', items:{
+    type:'object', additionalProperties:false,
+    required:['valor','valor_extenso','data_bom_para','data_emissao','cidade','emitente','cpf_cnpj','favorecido','banco','agencia','conta','numero_cheque','cmc7','confianca','observacoes'],
+    properties:{
+      valor: nulo({type:'number'}), valor_extenso: TXT,
+      data_bom_para: nulo({type:'string', format:'date'}), data_emissao: nulo({type:'string', format:'date'}),
+      cidade: TXT, emitente: TXT, cpf_cnpj: TXT, favorecido: TXT,
+      banco: TXT, agencia: TXT, conta: TXT, numero_cheque: TXT, cmc7: TXT,
+      confianca: {type:'string', enum:['alta','media','baixa']}, observacoes: TXT,
+    }}}}
+};
+const PROMPT_FOTO = `Esta foto mostra um ou mais cheques brasileiros. Leia cada cheque visível e devolva um item por cheque, na ordem em que aparecem (da esquerda para a direita, de cima para baixo).
+
+Para cada cheque:
+- valor: o valor em reais, como número (ex.: 4950.00). Se o valor numérico e o valor por extenso divergirem, use o valor por extenso (é o que vale para o cheque) e registre a divergência em observacoes.
+- valor_extenso: o valor por extenso, como escrito.
+- data_bom_para: se houver anotação de pré-datado ("bom para", "para", "depositar em" etc.), essa data, no formato AAAA-MM-DD; senão null.
+- data_emissao: a data de emissão escrita no cheque (cidade, dia, mês e ano), no formato AAAA-MM-DD.
+- cidade, emitente (titular impresso), cpf_cnpj (do titular, como impresso), favorecido ("pague a" / "à ordem de").
+- banco (código de 3 dígitos), agencia, conta, numero_cheque, como impressos no cheque.
+- cmc7: os 30 dígitos da linha magnética do rodapé, só os dígitos, sem separadores; null se não estiver legível por inteiro.
+- confianca: alta se todos os campos principais (valor, datas, emitente) estão nítidos; media se algum exigiu interpretação; baixa se algum está ilegível ou cortado.
+- observacoes: rasuras, divergências, campos cortados, cheque sem assinatura, cruzado ou nominal, ou outra dúvida. null se não houver nada a registrar.
+
+Não invente: campo ilegível ou ausente fica null. Se não houver cheque na foto, devolva a lista vazia.`;
+
+/* Linha CMC-7 (30 dígitos): banco(3) agência(4) DV | compensação(3) nº do cheque(6) tipo | DV conta(10) DV */
+function lerCMC7(s){
+  const d = String(s||'').replace(/\D/g,'');
+  if (d.length !== 30) return null;
+  return {banco:d.slice(0,3), agencia:d.slice(3,7), numero:d.slice(11,17), conta:d.slice(19,29)};
+}
+const soDig = s => String(s||'').replace(/\D/g,'');
+
+/* Converte o item devolvido pela IA num cheque da lista */
+function chequeDaFoto(r, arquivo){
+  const c = chequeVazio();
+  c.venc = r.data_bom_para || r.data_emissao || '';
+  c.valor = r.valor != null ? brl(r.valor) : '';
+  c.sacador = r.emitente || ''; c.doc = r.cpf_cnpj || '';
+  c.banco = r.banco || ''; c.agencia = r.agencia || ''; c.conta = r.conta || ''; c.numero = r.numero_cheque || '';
+  const obs = r.observacoes ? [r.observacoes] : [];
+  const m = lerCMC7(r.cmc7);
+  if (m){
+    for (const k of ['banco','agencia','numero']){
+      if (!c[k]) c[k] = m[k];
+      else if (soDig(c[k]).replace(/^0+/,'') !== m[k].replace(/^0+/,'')) obs.push(`${({banco:'banco',agencia:'agência',numero:'nº do cheque'})[k]} impresso (${c[k]}) difere da linha CMC-7 (${m[k]})`);
+    }
+    if (!c.conta) c.conta = m.conta.replace(/^0+/,'');
+  }
+  if (!r.data_bom_para && r.data_emissao) obs.push('sem data "bom para": usado como vencimento a data de emissão — confira');
+  if (!c.venc) obs.push('data não lida: informe o vencimento');
+  if (r.valor == null) obs.push('valor não lido: informe o valor');
+  c.foto = {arquivo, confianca:r.confianca, extenso:r.valor_extenso, emissao:r.data_emissao, bomPara:r.data_bom_para,
+            favorecido:r.favorecido, cidade:r.cidade, cmc7:r.cmc7, obs};
+  c.aberto = r.confianca !== 'alta' || obs.length > 0;
+  return c;
+}
+function infoFoto(f){
+  const partes = [`📷 Lido da foto <b>${esc(f.arquivo)}</b> <span class="selo ${esc(f.confianca)}">confiança ${esc(f.confianca==='media'?'média':f.confianca)}</span>`];
+  if (f.extenso) partes.push(`Extenso: <b>${esc(f.extenso)}</b>`);
+  if (f.emissao) partes.push(`Emissão: <b>${fmtData(f.emissao)}</b>${f.cidade?' · '+esc(f.cidade):''}`);
+  if (f.bomPara) partes.push(`Bom para: <b>${fmtData(f.bomPara)}</b>`);
+  if (f.favorecido) partes.push(`Favorecido: <b>${esc(f.favorecido)}</b>`);
+  if (f.cmc7) partes.push(`CMC-7: <b class="num">${esc(f.cmc7)}</b>`);
+  return `<div class="foto-info">${partes.join(' · ')}${(f.obs||[]).map(o=>`<div class="obs">⚠ ${esc(o)}</div>`).join('')}</div>`;
+}
+
+/* Reduz a foto (lado maior até 2400 px) e devolve JPEG em base64 */
+async function prepararImagem(arq){
+  let fonte;
+  try { fonte = await createImageBitmap(arq); }
+  catch(e){
+    fonte = await new Promise((ok, falha) => { const img = new Image(); img.onload = () => ok(img);
+      img.onerror = () => falha(new Error(/hei[cf]/i.test(arq.name+arq.type)
+        ? 'Este navegador não abre fotos HEIC do iPhone. Abra a calculadora no Safari, ou no iPhone use Ajustes › Câmera › Formatos › Mais Compatível.'
+        : 'Não foi possível abrir a imagem.'));
+      img.src = URL.createObjectURL(arq); });
+  }
+  const w = fonte.width, h = fonte.height, k = Math.min(1, 2400 / Math.max(w, h));
+  const cv = document.createElement('canvas'); cv.width = Math.round(w*k); cv.height = Math.round(h*k);
+  cv.getContext('2d').drawImage(fonte, 0, 0, cv.width, cv.height);
+  const url = cv.toDataURL('image/jpeg', 0.9);
+  return {url, data: url.split(',')[1]};
+}
+
+async function lerFotoIA(img){
+  const chave = $('#foto-chave').value.trim();
+  const Anthropic = await carregarSDK();
+  const client = new Anthropic({apiKey: chave, dangerouslyAllowBrowser: true});
+  try {
+    const resp = await client.beta.messages.create({
+      model: MODELO_FOTO, max_tokens: 16000,
+      betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
+      output_config: {effort: 'high', format: {type: 'json_schema', schema: ESQUEMA_CHEQUES}},
+      messages: [{role: 'user', content: [
+        {type: 'image', source: {type: 'base64', media_type: 'image/jpeg', data: img.data}},
+        {type: 'text', text: PROMPT_FOTO}]}],
+    });
+    if (resp.stop_reason === 'refusal') throw new Error('A IA recusou ler esta imagem.');
+    if (resp.stop_reason === 'max_tokens') throw new Error('A resposta da IA ficou incompleta. Tente uma foto com menos cheques.');
+    const txt = resp.content.find(b => b.type === 'text');
+    if (!txt) throw new Error('A IA não devolveu os dados do cheque.');
+    return JSON.parse(txt.text).cheques;
+  } catch(e){
+    if (e instanceof Anthropic.AuthenticationError) throw new Error('Chave da API inválida. Confira a chave em ⚙.');
+    if (e instanceof Anthropic.PermissionDeniedError) throw new Error('A chave não tem permissão para usar este modelo.');
+    if (e instanceof Anthropic.RateLimitError) throw new Error('Limite de uso da API atingido. Aguarde um pouco e tente de novo.');
+    if (e instanceof Anthropic.APIConnectionError) throw new Error('Sem conexão com a Anthropic. Verifique a internet.');
+    if (e instanceof Anthropic.BadRequestError && /credit|billing|balance/i.test(e.message)) throw new Error('Sem créditos na conta da API: compre créditos em console.anthropic.com › Billing (a assinatura do Claude não vale para a API). Mensagem da Anthropic: ' + (e.error?.error?.message || e.message));
+    if (e instanceof Anthropic.APIError) throw new Error('Erro da API da Anthropic: ' + e.message);
+    throw e;
+  }
+}
+
+function linhaStatus(arq){
+  const div = document.createElement('div'); div.className = 'fst';
+  div.innerHTML = `<span class="gira"></span><div class="msg"><b>${esc(arq.name || 'imagem colada')}</b><small>Preparando a foto…</small></div><button class="ic rm" title="Fechar">✕</button>`;
+  div.querySelector('button').onclick = () => div.remove();
+  $('#foto-status').append(div);
+  return {
+    msg: t => div.querySelector('small').textContent = t,
+    img: url => { const im = document.createElement('img'); im.src = url; div.querySelector('.gira').replaceWith(im); },
+    fim: (t, erro) => { div.classList.add(erro ? 'erro' : 'ok'); div.querySelector('.gira')?.remove(); div.querySelector('small').textContent = t; },
+  };
+}
+
+const ehImagem = a => a && (a.type.startsWith('image/') || /\.(hei[cf]|jpe?g|png|webp|gif|bmp|tiff?)$/i.test(a.name || ''));
+/* Lê as imagens da área de transferência pelo botão (funciona no Safari, que não envia o ⌘V à página fora de campos de texto) */
+async function colarDaAreaTransferencia(){
+  if (!navigator.clipboard?.read){ processarFotos([]); return; }
+  try {
+    const itens = await navigator.clipboard.read(), fotos = [];
+    for (const item of itens){
+      const tipo = item.types.find(t => t.startsWith('image/'));
+      if (tipo){ const blob = await item.getType(tipo); fotos.push(new File([blob], 'foto colada.' + (tipo.split('/')[1] || 'png'), {type: tipo})); }
+    }
+    processarFotos(fotos);
+  } catch(e){
+    linhaStatus({name: 'Não foi possível colar'}).fim(e.name === 'NotAllowedError'
+      ? 'O navegador não permitiu ler a área de transferência. Clique em “Colar” no aviso do navegador, ou arraste o arquivo para cá.'
+      : 'A área de transferência não tem uma imagem. Copie a foto (⌘C) e tente de novo, ou arraste o arquivo para cá.', true);
+  }
+}
+async function processarFotos(arquivos){
+  const todos = [...arquivos];
+  arquivos = todos.filter(ehImagem);
+  if (!arquivos.length){
+    linhaStatus({name: 'Nenhuma foto encontrada'}).fim(todos.length
+      ? 'O arquivo não é uma imagem. Formatos aceitos: JPG, PNG, HEIC e WEBP.'
+      : 'A área de transferência não tem uma imagem. Copie a foto (⌘C) e clique em “Colar foto”, ou arraste o arquivo para cá.', true);
+    return;
+  }
+  if (!$('#foto-chave').value.trim()){
+    $('#foto-cfg').open = true; $('#foto-chave').focus();
+    const s = linhaStatus({name:'Falta a chave da API'}); s.fim('Informe a chave da API da Anthropic em ⚙ e envie a foto de novo.', true);
+    return;
+  }
+  await Promise.all(arquivos.map(async arq => {
+    const nome = arq.name || 'imagem colada', s = linhaStatus(arq);
+    try {
+      const img = await prepararImagem(arq); s.img(img.url);
+      s.msg('Lendo com a IA… (pode levar até 1 minuto)');
+      const lidos = await lerFotoIA(img);
+      if (!lidos.length){ s.fim('Nenhum cheque encontrado nesta foto.', true); return; }
+      // remove cheques em branco antes de incluir os lidos
+      estado.cheques = estado.cheques.filter(c => c.venc || c.valor || c.sacador || c.foto);
+      const novos = lidos.map(r => chequeDaFoto(r, nome));
+      estado.cheques.push(...novos); montarDesc();
+      const duvidas = novos.filter(c => c.aberto).length;
+      s.fim(`${novos.length} ${novos.length===1?'cheque incluído':'cheques incluídos'}` + (duvidas ? ` · ${duvidas} com pontos a conferir (abertos abaixo)` : ' · confira os dados'));
+    } catch(e){ s.fim(e.message || String(e), true); }
+  }));
+}
+
+(function ligarFoto(){
+  const zona = $('#foto-zona'), arq = $('#foto-arq'), chave = $('#foto-chave');
+  try { chave.value = localStorage.getItem(CHAVE_API) || ''; } catch(e){}
+  chave.oninput = () => { try { localStorage.setItem(CHAVE_API, chave.value.trim()); } catch(e){} };
+  $('#foto-esquecer').onclick = () => { chave.value = ''; try { localStorage.removeItem(CHAVE_API); } catch(e){} };
+  $('#foto-cfg-btn').onclick = e => { e.stopPropagation(); $('#foto-cfg').open = !$('#foto-cfg').open; };
+  zona.onclick = () => arq.click();
+  $('#foto-camera').onclick = e => { e.stopPropagation(); $('#foto-cam').click(); };
+  $('#foto-cam').onchange = e => { processarFotos(e.target.files); e.target.value = ''; };
+  $('#foto-colar').onclick = e => { e.stopPropagation(); colarDaAreaTransferencia(); };
+  zona.onkeydown = e => { if (e.key==='Enter' || e.key===' '){ e.preventDefault(); arq.click(); } };
+  arq.onchange = () => { processarFotos(arq.files); arq.value = ''; };
+  zona.ondragover = e => { e.preventDefault(); zona.classList.add('sobre'); };
+  zona.ondragleave = () => zona.classList.remove('sobre');
+  zona.ondrop = e => { e.preventDefault(); zona.classList.remove('sobre'); processarFotos(e.dataTransfer.files); };
+  document.addEventListener('paste', e => {
+    if ($('#aba-desconto').classList.contains('oculto')) return;
+    const dt = e.clipboardData; if (!dt) return;
+    let fotos = [...(dt.files || [])].filter(ehImagem);
+    if (!fotos.length) fotos = [...(dt.items || [])].filter(i => i.kind === 'file').map(i => i.getAsFile()).filter(ehImagem);
+    const emCampo = e.target.closest?.('input, textarea, [contenteditable]');
+    if (fotos.length){ e.preventDefault(); processarFotos(fotos); }
+    else if (!emCampo) processarFotos([]);
+  });
+})();
+
+ligarCabecalho(); montarDesc();
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
+$('#versao-calc').textContent = VERSAO_CALC.split('-').reverse().join('/');
+</script>
+</body>
+</html>
