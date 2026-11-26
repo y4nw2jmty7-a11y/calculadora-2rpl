@@ -1,6 +1,6 @@
 {
-  "name": "Desconto de Cheques — 2RPL",
-  "short_name": "Cheques 2RPL",
+  "name": "Títulos 2RPL",
+  "short_name": "Títulos 2RPL",
   "description": "Cálculo de juros e valor líquido na compra de cheques",
   "lang": "pt-BR",
   "start_url": "./",
