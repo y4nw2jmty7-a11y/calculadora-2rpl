@@ -535,6 +535,23 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
   </div>
 </dialog>
 
+<dialog id="dlg-apagar-agenda">
+  <div class="dlg-c">
+    <h2>Apagar também da agenda?</h2>
+    <p class="mut" style="margin:0 0 12px;font-size:13px" id="aa-sub"></p>
+    <div class="linhas" id="aa-lista"></div>
+    <div id="aa-pergunta" class="dlg-acts">
+      <button class="btn lev" id="aa-nao">Não, manter na agenda</button>
+      <button class="btn pri" id="aa-sim">Sim, apagar da agenda</button>
+    </div>
+    <div id="aa-passo2" class="oculto">
+      <p style="font-size:13px;margin:0 0 8px">Foi baixado um <b>arquivo de cancelamento</b>. Abra-o (no iPhone: toque nele em Downloads/Arquivos) para a agenda retirar os compromissos acima.</p>
+      <p class="mut" style="font-size:12px;margin:0">Se algum continuar na agenda (o iPhone e o Google Agenda às vezes não aceitam cancelamento por arquivo), abra o compromisso na data indicada e toque em <b>Apagar evento</b>.</p>
+      <div class="dlg-acts"><button class="btn lev" id="aa-baixar">Baixar de novo</button><button class="btn pri" id="aa-ok">Concluído</button></div>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="dlg-zap">
   <div class="dlg-c">
     <h2>Mensagem para o cliente</h2>
@@ -1016,6 +1033,7 @@ function excluirOp(id){
   const quem = garantirUsuario(); if (!quem) return;
   Object.assign(o, {excluida:true, excluidaEm:agora(), excluidaPor:quem, atualizadoEm:agora()});
   salvarOps(ops); marcarPendente(true); atualizarContOps(); renderOps();
+  perguntarApagarAgenda(o);
 }
 function baixar(nome, conteudo, tipo){
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([conteudo], {type: tipo})); a.download = nome;
@@ -1184,13 +1202,32 @@ function gerarICS(op, aviso = 'dia'){
   for (const {c, i} of chequesParaAgenda(op)){
     L.push('BEGIN:VEVENT', `UID:${op.id}-${i}@calculadora-2rpl`, `DTSTAMP:${agoraUTC}`,
       `DTSTART;VALUE=DATE:${dataICS(c.venc)}`, `DTEND;VALUE=DATE:${dataICS(diaSeguinte(c.venc))}`,
-      `SUMMARY:${escICS(tituloEvento(op, c, i))}`, `DESCRIPTION:${escICS(descricaoEvento(op, c))}`, 'TRANSP:TRANSPARENT',
+      `SUMMARY:${escICS(tituloEvento(op, c, i))}`, `DESCRIPTION:${escICS(descricaoEvento(op, c))}`, 'TRANSP:TRANSPARENT', 'SEQUENCE:0', 'STATUS:CONFIRMED',
       'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${escICS('Vence hoje: ' + tituloEvento(op, c, i))}`, 'TRIGGER:PT9H', 'END:VALARM');
     if (aviso === 'vespera') L.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${escICS('Vence amanhã: ' + tituloEvento(op, c, i))}`, 'TRIGGER:-PT15H', 'END:VALARM');
     L.push('END:VEVENT');
   }
   L.push('END:VCALENDAR');
   return L.map(dobraICS).join('\r\n') + '\r\n';
+}
+/* Cancelamento: mesmo identificador (UID) dos compromissos criados, com STATUS:CANCELLED.
+   Agendas que aceitam cancelamento (Mac, Outlook) removem ou riscam o compromisso; nas demais, apaga-se à mão. */
+function gerarICSCancelamento(op){
+  const agoraUTC = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//2RPL//Calculadora de Cheques//PT-BR', 'CALSCALE:GREGORIAN', 'METHOD:CANCEL'];
+  op.cheques.forEach((c, i) => L.push('BEGIN:VEVENT', `UID:${op.id}-${i}@calculadora-2rpl`, `DTSTAMP:${agoraUTC}`, 'SEQUENCE:1', 'STATUS:CANCELLED',
+    `DTSTART;VALUE=DATE:${dataICS(c.venc)}`, `DTEND;VALUE=DATE:${dataICS(diaSeguinte(c.venc))}`,
+    `SUMMARY:${escICS('CANCELADO — ' + tituloEvento(op, c, i))}`, 'END:VEVENT'));
+  L.push('END:VCALENDAR');
+  return L.map(dobraICS).join('\r\n') + '\r\n';
+}
+let opApagarAgenda = null;
+function perguntarApagarAgenda(op){
+  opApagarAgenda = op;
+  $('#aa-sub').textContent = `A operação “${op.nome}” foi excluída. Os vencimentos dela que você adicionou à agenda continuam lá.`;
+  $('#aa-lista').innerHTML = op.cheques.map((c,i) => `<div class="linha"><span class="rot">${fmtData(c.venc)} · ${esc(tituloEvento(op, c, i))}</span></div>`).join('');
+  $('#aa-passo2').classList.add('oculto'); $('#aa-pergunta').classList.remove('oculto');
+  $('#dlg-apagar-agenda').showModal();
 }
 function linkGoogle(op, c, i){
   const q = new URLSearchParams({action:'TEMPLATE', text:tituloEvento(op, c, i), dates:`${dataICS(c.venc)}/${dataICS(diaSeguinte(c.venc))}`, details:descricaoEvento(op, c)});
@@ -1208,6 +1245,14 @@ function abrirAgenda(id){
   $('#ag-ok').textContent = '';
   if (!$('#dlg-agenda').open) $('#dlg-agenda').showModal();
 }
+(function ligarApagarAgenda(){
+  const baixarCancel = () => { const op = opApagarAgenda; if (!op) return;
+    baixar(`cancelar-${op.nome.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').toLowerCase()}.ics`, gerarICSCancelamento(op), 'text/calendar;charset=utf-8'); };
+  $('#aa-nao').onclick = () => $('#dlg-apagar-agenda').close();
+  $('#aa-sim').onclick = () => { baixarCancel(); $('#aa-pergunta').classList.add('oculto'); $('#aa-passo2').classList.remove('oculto'); };
+  $('#aa-baixar').onclick = baixarCancel;
+  $('#aa-ok').onclick = () => $('#dlg-apagar-agenda').close();
+})();
 (function ligarAgenda(){
   $('#ag-fechar').onclick = () => $('#dlg-agenda').close();
   $('#ag-aviso').onchange = () => { try { localStorage.setItem(CHAVE_AVISO, $('#ag-aviso').value); } catch(e){} };
