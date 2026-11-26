@@ -297,6 +297,9 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
 .ag-google a:hover{border-color:var(--pri)}
 .ag-google a span{color:#1a73e8;font-weight:600;white-space:nowrap}
 
+.aviso-armaz{background:var(--neg);color:#fff;padding:12px 16px;font-size:13px;line-height:1.45;text-align:center}
+.aviso-armaz b{color:#fff}
+
 /* ---------- mensagem WhatsApp ---------- */
 .btn.zap{width:100%;justify-content:center;margin-top:8px;padding:10px;font-weight:600;color:#1f7a4a;border-color:#1f7a4a}
 .btn.zap:hover{background:#e8f5ee}
@@ -363,6 +366,7 @@ dialog::backdrop{background:rgba(30,25,20,.45)}
   </div>
 </div>
 
+<div class="aviso-armaz oculto" id="aviso-armaz">⚠ <b>Este aparelho não está guardando os dados da calculadora</b>: a chave e as operações somem ao fechar. No iPhone, abra Ajustes › Apps › Safari e desligue “Bloquear Todos os Cookies”; não use a navegação privada. Depois feche e abra o app “Títulos 2RPL” e receba o arquivo da equipe de novo.</div>
 <main>
 <!-- ================= DESCONTO ================= -->
 <section id="aba-desconto" class="layout">
@@ -1028,11 +1032,16 @@ function chaveApiLocal(){ try { return localStorage.getItem('calcCheques.apiKey'
 function gravarChaveApi(k){ try { localStorage.setItem('calcCheques.apiKey', k); } catch(e){} const el = document.getElementById('foto-chave'); if (el) el.value = k; statusChave(); }
 const abertoComoApp = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 /* Mostra se a chave está guardada e se a calculadora está aberta como app ou no navegador (no iPhone, cada um guarda dados separados) */
+/* Testa se o navegador permite guardar dados (no iPhone, "Bloquear Todos os Cookies" ou a navegação privada impedem) */
+function armazenamentoOk(){
+  try { const k = 'calcCheques.teste'; localStorage.setItem(k, '1'); const ok = localStorage.getItem(k) === '1'; localStorage.removeItem(k); return ok; }
+  catch(e){ return false; }
+}
 function statusChave(){
   const el = document.getElementById('ch-status'); if (!el) return;
   const ok = chaveValida(chaveApiLocal());
   el.className = 'ch-status ' + (ok ? 'ok' : 'falta');
-  el.textContent = (ok ? '✓ Chave guardada neste aparelho' : '⚠ Nenhuma chave guardada aqui') + ' · aberta ' + (abertoComoApp() ? 'como app da Tela de Início' : 'no navegador');
+  el.textContent = (!armazenamentoOk() ? '⚠ Este aparelho está bloqueando o armazenamento: a chave não fica guardada' : ok ? '✓ Chave guardada neste aparelho' : '⚠ Nenhuma chave guardada aqui') + ' · aberta ' + (abertoComoApp() ? 'como app da Tela de Início' : 'no navegador');
 }
 const chaveValida = k => typeof k === 'string' && /^sk-ant-[A-Za-z0-9_-]{20,}$/.test(k.trim());
 const enviarChave = () => $('#eq-enviar-chave').checked && chaveValida(chaveApiLocal());
@@ -1501,7 +1510,8 @@ async function processarFotos(arquivos){
 })();
 
 ligarCabecalho(); montarDesc();
-try { navigator.storage?.persist?.(); } catch(e){} // pede ao navegador para não apagar os dados guardados
+try { navigator.storage?.persist?.(); } catch(e){}
+if (!armazenamentoOk()) document.getElementById('aviso-armaz').classList.remove('oculto'); // pede ao navegador para não apagar os dados guardados
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) navigator.serviceWorker.register('sw.js').catch(() => {});
 $('#versao-calc').textContent = VERSAO_CALC.split('-').reverse().join('/');
 </script>
