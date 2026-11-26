@@ -1,6 +1,6 @@
 /* Funcionamento offline da calculadora: busca sempre a versão mais nova na internet
    e, sem conexão, usa a última cópia guardada. Não guarda dados de operações (eles ficam no navegador). */
-const CACHE = 'cheques-2rpl-20261126170755';
+const CACHE = 'cheques-2rpl-20261126172624';
 const ARQUIVOS = ['./', './index.html', './manifest.webmanifest', './icone-180.png', './icone-192.png', './icone-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQUIVOS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {
